@@ -80,8 +80,8 @@
     <div class="meta">
       <span class="icon t-md"><Icon name="file" size={15} /></span>
       <span class="name">{file.name}</span>
-      {#if file.path !== file.name}
-        <span class="crumb">{file.path}</span>
+      {#if file.dir}
+        <span class="crumb">{file.dir}</span>
       {/if}
       {#if dirty}
         <span class="unsaved" title="Cambios sin guardar"></span>
@@ -200,7 +200,9 @@
     <div class="meta">
       <span class="icon t-image"><Icon name="image" size={15} /></span>
       <span class="name">{file.name}</span>
-      <span class="crumb">{file.path}</span>
+      {#if file.dir}
+        <span class="crumb">{file.dir}</span>
+      {/if}
     </div>
   </header>
   <div class="media-view">

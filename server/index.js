@@ -48,6 +48,24 @@ function toRelUrl(relPath) {
   return relPath.split('/').map(encodeURIComponent).join('/');
 }
 
+// Nombre visible de un archivo: las notas (index.md dentro de carpeta *-md)
+// se muestran como `nota.md`; `dir` es la ruta de carpetas para el breadcrumb.
+function fileLabels(rel) {
+  const parts = rel.split('/');
+  const name = parts[parts.length - 1];
+  const parent = parts.length >= 2 ? parts[parts.length - 2] : '';
+  if (/^index\.md$/i.test(name) && parent.endsWith('-md')) {
+    return {
+      name: `${parent.slice(0, -3)}.md`,
+      dir: parts.length >= 3 ? `${parts.slice(0, -2).join('/')}/` : ''
+    };
+  }
+  return {
+    name,
+    dir: parts.length >= 2 ? `${parts.slice(0, -1).join('/')}/` : ''
+  };
+}
+
 async function buildTree(absDir, relDir = '', depth = 0) {
   const entries = await fsp.readdir(absDir, { withFileTypes: true });
   const nodes = [];
@@ -102,18 +120,38 @@ export function createApp(root) {
   app.get('/api/file', wrap(async (req, res) => {
     const rel = String(req.query.path ?? '');
     const abs = safeJoin(root, rel);
-    const stat = await fsp.stat(abs);
+    let stat;
+    try {
+      stat = await fsp.stat(abs);
+    } catch {
+      // Nota sin index.md (p. ej. carpeta *-md creada por fuera): la inicializamos
+      const parts = rel.split('/');
+      const parent = parts.length >= 2 ? parts[parts.length - 2] : '';
+      const isNoteIndex = parent.endsWith('-md') && /^index\.md$/i.test(parts[parts.length - 1]);
+      if (isNoteIndex) {
+        try {
+          const parentAbs = safeJoin(root, parts.slice(0, -1).join('/'));
+          if ((await fsp.stat(parentAbs)).isDirectory()) {
+            const title = parent.slice(0, -3).replace(/^-+|-+$/g, '') || parent;
+            await fsp.writeFile(abs, `# ${title}\n\n`, 'utf8');
+            stat = await fsp.stat(abs);
+          }
+        } catch {}
+      }
+      if (!stat) return res.status(404).json({ error: 'El archivo no existe' });
+    }
     if (!stat.isFile()) {
       return res.status(400).json({ error: 'No es un archivo' });
     }
     const ext = path.extname(abs).toLowerCase();
-    const name = path.basename(abs);
+    const { name, dir } = fileLabels(rel);
     if (TEXT_EXTS.has(ext)) {
       const content = await fsp.readFile(abs, 'utf8');
-      return res.json({ name, path: rel, type: 'file', ext: ext.slice(1), text: true, content });
+      return res.json({ name, dir, path: rel, type: 'file', ext: ext.slice(1), text: true, content });
     }
     return res.json({
       name,
+      dir,
       path: rel,
       type: 'file',
       ext: ext.slice(1),
@@ -165,6 +203,11 @@ export function createApp(root) {
     const abs = path.join(parentAbs, name);
     if (fs.existsSync(abs)) return res.status(409).json({ error: 'Ya existe una carpeta con ese nombre' });
     await fsp.mkdir(abs);
+    // Una carpeta terminada en -md es una nota: le creamos su index.md
+    if (name.endsWith('-md')) {
+      const title = name.slice(0, -3).replace(/^-+|-+$/g, '') || name;
+      await fsp.writeFile(path.join(abs, 'index.md'), `# ${title}\n\n`, 'utf8');
+    }
     const rel = parentRel ? `${parentRel}/${name}` : name;
     res.status(201).json({ ok: true, path: rel });
   }));
