@@ -10,7 +10,9 @@
   "files": [
     "bin",
     "server",
-    "dist"
+    "dist",
+    "README.es.md",
+    "AGENTS.md"
   ],
   "engines": {
     "node": ">=18"
