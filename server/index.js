@@ -253,7 +253,7 @@ export function createApp(root) {
     await fsp.mkdir(dirAbs, { recursive: true });
     await fsp.writeFile(path.join(dirAbs, name), req.body);
     const rel = dirRel ? `${dirRel}/${name}` : name;
-    res.status(201).json({ ok: true, path: rel });
+    res.status(201).json({ ok: true, path: rel, name });
   }));
 
   app.delete('/api/entry', wrap(async (req, res) => {

@@ -15,7 +15,9 @@
     panelOpen = $bindable(false),
     onsave,
     onpick,
-    onexport
+    onexport,
+    onremove,
+    onpasteimage
   } = $props();
 
   let textareaEl = $state(null);
@@ -29,11 +31,12 @@
   );
 
   async function insertResource(resource) {
-    const alt = resource.name.replace(/\.[^.]+$/, '');
+    const name = resource.name ?? 'imagen';
+    const alt = name.replace(/\.[^.]+$/, '');
     const snippet =
       resource.type === 'image'
-        ? `![${alt}](./${encodeURIComponent(resource.name)})`
-        : `[${alt}](./${encodeURIComponent(resource.name)})`;
+        ? `![${alt}](./${encodeURIComponent(name)})`
+        : `[${alt}](./${encodeURIComponent(name)})`;
     if (mode === 'preview') mode = 'edit';
     await tick();
     const el = textareaEl;
@@ -73,7 +76,30 @@
     const ratio = el.scrollTop / range;
     previewEl.scrollTop = ratio * Math.max(0, previewEl.scrollHeight - previewEl.clientHeight);
   }
+
+  // Pega imágenes del portapapeles: las sube como recursos y las inserta.
+  // Con texto en el portapapeles se deja el comportamiento por defecto.
+  async function handlePaste(event) {
+    if (!file?.text || !resourcesEnabled) return;
+    const clipboard = event.clipboardData;
+    if (!clipboard || clipboard.getData('text/plain')) return;
+    const items = Array.from(clipboard.items).filter(
+      (item) => item.kind === 'file' && item.type.startsWith('image/')
+    );
+    if (!items.length) return;
+    event.preventDefault();
+    for (const [index, item] of items.entries()) {
+      const pasted = item.getAsFile();
+      if (!pasted) continue;
+      const ext = (pasted.type.split('/')[1] ?? 'png').replace('jpeg', 'jpg');
+      const name = `imagen-${Date.now()}${items.length > 1 ? `-${index + 1}` : ''}.${ext}`;
+      const resource = await onpasteimage?.(new File([pasted], name, { type: pasted.type }));
+      if (resource) await insertResource(resource);
+    }
+  }
 </script>
+
+<svelte:window onpaste={handlePaste} />
 
 {#if file?.text}
   <header class="toolbar">
@@ -176,9 +202,13 @@
           <div class="res-scroll">
             <div class="res-grid">
               {#each resources as resource (resource.path)}
-                <button
+                <div
                   class="res-item"
+                  role="button"
+                  tabindex="0"
                   onclick={() => insertResource(resource)}
+                  onkeydown={(event) =>
+                    (event.key === 'Enter' || event.key === ' ') && insertResource(resource)}
                   title="Insertar en la nota"
                 >
                   {#if resource.type === 'image'}
@@ -187,7 +217,17 @@
                     <span class="res-file"><Icon name="file" size={16} /></span>
                   {/if}
                   <span class="res-name">{resource.name}</span>
-                </button>
+                  <button
+                    class="res-remove"
+                    title="Eliminar recurso"
+                    onclick={(event) => {
+                      event.stopPropagation();
+                      onremove?.(resource);
+                    }}
+                  >
+                    <Icon name="x" size={11} />
+                  </button>
+                </div>
               {/each}
             </div>
           </div>

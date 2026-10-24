@@ -129,14 +129,40 @@
     }
   }
 
-  async function handleUpload(file) {
-    if (uploadDir === null) return;
+  async function uploadResource(file) {
+    if (uploadDir === null) return null;
     try {
-      await api.uploadFile(uploadDir, file);
+      const result = await api.uploadFile(uploadDir, file);
       await refresh();
       await loadResources();
       panelOpen = true;
-      notify(`Recurso añadido: ${file.name}`);
+      return result;
+    } catch (error) {
+      notify(error.message, 'error');
+      return null;
+    }
+  }
+
+  async function handleUpload(file) {
+    const result = await uploadResource(file);
+    if (result) notify(`Recurso añadido: ${file.name}`);
+  }
+
+  // El pegado necesita el recurso con forma { name, path, type } para insertarlo.
+  async function handlePasteImage(file) {
+    const result = await uploadResource(file);
+    if (!result) return null;
+    const name = result.name ?? result.path.split('/').pop();
+    notify(`Imagen pegada: ${name}`);
+    return { name, path: result.path, type: 'image' };
+  }
+
+  async function handleRemoveResource(resource) {
+    if (!confirm(`¿Eliminar "${resource.name}"?`)) return;
+    try {
+      await api.removeEntry(resource.path);
+      await loadResources();
+      notify('Recurso eliminado');
     } catch (error) {
       notify(error.message, 'error');
     }
@@ -280,6 +306,8 @@
         onsave={() => save()}
         onpick={pickUpload}
         onexport={handleExport}
+        onremove={handleRemoveResource}
+        onpasteimage={handlePasteImage}
       />
     {:else}
       <div class="empty">

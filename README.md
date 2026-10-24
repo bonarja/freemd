@@ -73,7 +73,8 @@ Everything lives in one folder (by default `~/openmd`):
 
 - **Sidebar** — your notes and folders. Hover any item to rename (✏️) or delete (🗑); the toolbar icons create notes, folders and upload attachments to the current note.
 - **Editor with three view modes** — *Edición* (raw markdown), *Split* (editor and rendered preview side by side, scroll-synced), *Vista* (rendered preview). Code blocks get syntax highlighting.
-- **Resources panel** — a collapsible panel on the right showing the current note's images as thumbnails. Click one to insert its markdown at the cursor.
+- **Resources panel** — a collapsible panel on the right showing the current note's images as thumbnails. Click one to insert its markdown at the cursor; hover to delete it.
+- **Paste images** — copy a screenshot or image and press `Cmd/Ctrl + V` anywhere in the note: it's saved into the note's folder and its markdown inserted at the cursor.
 - **Autosave** — changes save automatically 1.2 s after you stop typing (or instantly with `Cmd/Ctrl + S`).
 - **Export** — one click to download the current note as **PDF** or **Word (.docx)**: light-themed, syntax-highlighted code, embedded images, named after the note (`recipes.pdf`, never `index.pdf`). Unsaved changes are saved first.
 
