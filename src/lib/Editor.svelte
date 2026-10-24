@@ -13,6 +13,8 @@
     resources = [],
     resourcesEnabled = false,
     panelOpen = $bindable(false),
+    sidebarOpen = true,
+    onsidebar,
     onsave,
     onpick,
     onexport,
@@ -103,6 +105,13 @@
 
 {#if file?.text}
   <header class="toolbar">
+    <button
+      class="icon-btn"
+      title={sidebarOpen ? 'Ocultar notas (⌘B)' : 'Mostrar notas (⌘B)'}
+      onclick={() => onsidebar?.()}
+    >
+      <Icon name="panel" size={16} />
+    </button>
     <div class="meta">
       <span class="icon t-md"><Icon name="file" size={15} /></span>
       <span class="name">{file.name}</span>
@@ -237,6 +246,13 @@
   </div>
 {:else if file}
   <header class="toolbar">
+    <button
+      class="icon-btn"
+      title={sidebarOpen ? 'Ocultar notas (⌘B)' : 'Mostrar notas (⌘B)'}
+      onclick={() => onsidebar?.()}
+    >
+      <Icon name="panel" size={16} />
+    </button>
     <div class="meta">
       <span class="icon t-image"><Icon name="image" size={15} /></span>
       <span class="name">{file.name}</span>

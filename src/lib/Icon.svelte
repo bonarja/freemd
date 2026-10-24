@@ -51,5 +51,8 @@
     <path d="M12 15V3" />
   {:else if name === 'chevron-down'}
     <path d="m6 9 6 6 6-6" />
+  {:else if name === 'panel'}
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M9 3v18" />
   {/if}
 </svg>

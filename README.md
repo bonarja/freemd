@@ -73,7 +73,7 @@ Everything lives in one folder (by default `~/freemd`):
 
 ## The app
 
-- **Sidebar** — your notes and folders. Hover any item to rename (✏️) or delete (🗑); the toolbar icons create notes, folders and upload attachments to the current note.
+- **Sidebar** — your notes and folders. Hover any item to rename (✏️) or delete (🗑); the toolbar icons create notes, folders and upload attachments to the current note. Collapse it with the panel button or `Cmd/Ctrl + B` (state is remembered).
 - **Editor with three view modes** — *Edición* (raw markdown), *Split* (editor and rendered preview side by side, scroll-synced), *Vista* (rendered preview). Code blocks get syntax highlighting.
 - **Resources panel** — a collapsible panel on the right showing the current note's images as thumbnails. Click one to insert its markdown at the cursor; hover to delete it.
 - **Paste images** — copy a screenshot or image and press `Cmd/Ctrl + V` anywhere in the note: it's saved into the note's folder and its markdown inserted at the cursor.

@@ -79,11 +79,26 @@ button {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+}
+
+.sidebar-slot {
+  width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.18s ease, min-width 0.18s ease;
+}
+
+.sidebar-slot.collapsed {
+  width: 0;
+  min-width: 0;
 }
 
 .sidebar {
   width: 280px;
   min-width: 280px;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--bg-darker);
@@ -803,6 +818,13 @@ textarea.code.half {
   justify-content: center;
   gap: 10px;
   color: var(--fg-dim);
+  position: relative;
+}
+
+.sidebar-open {
+  position: absolute;
+  top: 9px;
+  left: 10px;
 }
 
 .primary-btn {

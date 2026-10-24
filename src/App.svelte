@@ -21,6 +21,17 @@
   let flashTimer;
   let fileInput = $state(null);
   let createRequest = $state(0);
+  let sidebarOpen = $state(
+    typeof localStorage === 'undefined' ? true : localStorage.getItem('freemd:sidebar') !== '0'
+  );
+
+  $effect(() => {
+    localStorage.setItem('freemd:sidebar', sidebarOpen ? '1' : '0');
+  });
+
+  function toggleSidebar() {
+    sidebarOpen = !sidebarOpen;
+  }
 
   function requestNewNote() {
     createRequest++;
@@ -264,6 +275,11 @@
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
       event.preventDefault();
       save();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+      event.preventDefault();
+      toggleSidebar();
     }
   }
 
@@ -280,18 +296,20 @@
 <svelte:window onkeydown={handleKeydown} onbeforeunload={handleBeforeUnload} />
 
 <div class="app">
-  <Sidebar
-    {tree}
-    {current}
-    {root}
-    {uploadDir}
-    {createRequest}
-    onopen={openNode}
-    oncreate={handleCreate}
-    onpick={pickUpload}
-    ondelete={handleDelete}
-    onrename={handleRename}
-  />
+  <div class="sidebar-slot" class:collapsed={!sidebarOpen}>
+    <Sidebar
+      {tree}
+      {current}
+      {root}
+      {uploadDir}
+      {createRequest}
+      onopen={openNode}
+      oncreate={handleCreate}
+      onpick={pickUpload}
+      ondelete={handleDelete}
+      onrename={handleRename}
+    />
+  </div>
   <main class="main">
     {#if current}
       <Editor
@@ -303,6 +321,8 @@
         {resources}
         resourcesEnabled={uploadDir !== null}
         bind:panelOpen
+        {sidebarOpen}
+        onsidebar={toggleSidebar}
         onsave={() => save()}
         onpick={pickUpload}
         onexport={handleExport}
@@ -311,6 +331,11 @@
       />
     {:else}
       <div class="empty">
+        {#if !sidebarOpen}
+          <button class="icon-btn sidebar-open" title="Mostrar notas (⌘B)" onclick={toggleSidebar}>
+            <Icon name="panel" size={16} />
+          </button>
+        {/if}
         <p class="logo">free<span style="color: var(--green)">md</span></p>
         <p>
           {tree && tree.length === 0

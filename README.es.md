@@ -73,7 +73,7 @@ Todo vive en una carpeta (por defecto `~/freemd`):
 
 ## La app
 
-- **Sidebar** — tus notas y carpetas. Al pasar el cursor sobre un elemento aparecen renombrar (✏️) y eliminar (🗑); los iconos de la cabecera crean notas, carpetas y suben adjuntos a la nota actual.
+- **Sidebar** — tus notas y carpetas. Al pasar el cursor sobre un elemento aparecen renombrar (✏️) y eliminar (🗑); los iconos de la cabecera crean notas, carpetas y suben adjuntos a la nota actual. Puedes plegarla con el botón de panel o `Cmd/Ctrl + B` (el estado se recuerda).
 - **Editor con tres modos** — *Edición* (markdown crudo), *Split* (editor y vista renderizada lado a lado, con scroll sincronizado), *Vista* (solo preview). Los bloques de código llevan resaltado de sintaxis.
 - **Panel de recursos** — panel plegable a la derecha con las imágenes de la nota actual en miniaturas. Haz click en una para insertar su markdown en el cursor; al pasar el cursor puedes eliminarla.
 - **Pegar imágenes** — copia una captura o imagen y pulsa `Cmd/Ctrl + V` sobre la nota: se guarda en la carpeta de la nota y se inserta su markdown en el cursor.
