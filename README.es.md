@@ -8,7 +8,7 @@ Una app de notas en markdown *local-first* que vive en tu máquina. Un comando y
 npx freemd
 ```
 
-Eso es todo: crea `~/openmd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
+Eso es todo: crea `~/freemd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
 
 ## Por qué freemd
 
@@ -30,13 +30,13 @@ npx freemd [opciones]
 | Opción | Descripción |
 | --- | --- |
 | `-p, --port <n>` | Puerto del servidor (por defecto `5813`) |
-| `-d, --dir <ruta>` | Carpeta de notas (por defecto `~/openmd`) |
+| `-d, --dir <ruta>` | Carpeta de notas (por defecto `~/freemd`) |
 | `-H, --host <addr>` | Escuchar en otra interfaz; sin valor usa `0.0.0.0` (toda la red local) |
 | `--no-open` | No abrir el navegador automáticamente |
 | `-v, --version` | Mostrar versión |
 | `-h, --help` | Mostrar ayuda |
 
-También funcionan las variables de entorno `OPENMD_PORT`, `OPENMD_DIR` y `OPENMD_HOST`.
+También funcionan las variables de entorno `FREEMD_PORT`, `FREEMD_DIR` y `FREEMD_HOST`.
 
 ### Acceder desde otros dispositivos
 
@@ -50,10 +50,10 @@ Expone la app en tu red local e imprime la URL de cada interfaz de red, p. ej. `
 
 ## Cómo se guardan tus notas
 
-Todo vive en una carpeta (por defecto `~/openmd`):
+Todo vive en una carpeta (por defecto `~/freemd`):
 
 ```
-~/openmd
+~/freemd
 ├── viaje-a-japon-md
 │   ├── index.md        ← la nota en sí
 │   ├── dia-1.png       ← sus imágenes y adjuntos

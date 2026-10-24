@@ -24,7 +24,7 @@ if (hasFlag('-h', '--help')) {
 
   Opciones:
     -p, --port <n>     Puerto del servidor (por defecto 5813)
-    -d, --dir <ruta>   Carpeta de notas (por defecto ~/openmd)
+    -d, --dir <ruta>   Carpeta de notas (por defecto ~/freemd)
     -H, --host <addr>  Escuchar en otra interfaz; sin valor usa 0.0.0.0 (toda la red local)
         --no-open      No abrir el navegador automáticamente
     -v, --version      Mostrar versión
@@ -41,7 +41,7 @@ if (hasFlag('-v', '--version')) {
 const portArg = valueOf('--port', '-p');
 let port;
 if (portArg === undefined) {
-  port = Number(process.env.OPENMD_PORT) || 5813;
+  port = Number(process.env.FREEMD_PORT) || 5813;
 } else {
   port = Number(portArg);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -50,20 +50,21 @@ if (portArg === undefined) {
   }
 }
 
-const dir = valueOf('--dir', '-d') ?? process.env.OPENMD_DIR;
+const dir = valueOf('--dir', '-d') ?? process.env.FREEMD_DIR;
 const open = !hasFlag('--no-open');
 
 let hostArg = valueOf('--host', '-H');
 if (hasFlag('--host', '-H') && (hostArg === undefined || hostArg.startsWith('-'))) {
   hostArg = '0.0.0.0';
 }
-const host = hostArg ?? process.env.OPENMD_HOST;
+const host = hostArg ?? process.env.FREEMD_HOST;
 
 try {
-  const { url, root } = await start({ port, dir, host, open });
+  const { url, root, migrated } = await start({ port, dir, host, open });
   console.log('');
   console.log(`  freemd ${pkg.version}`);
   console.log(`  notas   ${root}`);
+  if (migrated) console.log(`  migrada ${migrated} → ${root}`);
   console.log(`  listo   ${url}`);
   if (host === '0.0.0.0' || host === '::') {
     for (const address of lanAddresses(port)) {

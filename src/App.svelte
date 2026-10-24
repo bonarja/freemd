@@ -5,7 +5,7 @@
   import * as api from './lib/api.js';
 
   let tree = $state(null);
-  let root = $state('~/openmd');
+  let root = $state('~/freemd');
   let current = $state(null);
   let content = $state('');
   let saved = $state('');

@@ -8,7 +8,7 @@ A local-first markdown notes app that lives on your machine. One command and you
 npx freemd
 ```
 
-That's it: it creates `~/openmd` if it doesn't exist, starts a local server at [http://localhost:5813](http://localhost:5813) and opens your browser.
+That's it: it creates `~/freemd` if it doesn't exist, starts a local server at [http://localhost:5813](http://localhost:5813) and opens your browser.
 
 ## Why freemd
 
@@ -30,13 +30,13 @@ npx freemd [options]
 | Option | Description |
 | --- | --- |
 | `-p, --port <n>` | Server port (default `5813`) |
-| `-d, --dir <path>` | Notes folder (default `~/openmd`) |
+| `-d, --dir <path>` | Notes folder (default `~/freemd`) |
 | `-H, --host <addr>` | Listen on another interface; with no value binds `0.0.0.0` (whole local network) |
 | `--no-open` | Don't open the browser automatically |
 | `-v, --version` | Print version |
 | `-h, --help` | Show help |
 
-`OPENMD_PORT`, `OPENMD_DIR` and `OPENMD_HOST` environment variables work too.
+`FREEMD_PORT`, `FREEMD_DIR` and `FREEMD_HOST` environment variables work too.
 
 ### Access from other devices
 
@@ -50,10 +50,10 @@ This exposes the app on your local network and prints the URL for each network i
 
 ## How your notes are stored
 
-Everything lives in one folder (by default `~/openmd`):
+Everything lives in one folder (by default `~/freemd`):
 
 ```
-~/openmd
+~/freemd
 ├── trip-to-japan-md
 │   ├── index.md        ← the note itself
 │   ├── day-1.png       ← its images and attachments
