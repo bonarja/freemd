@@ -606,6 +606,23 @@ textarea.code {
   caret-color: var(--blue);
 }
 
+textarea.code.half {
+  flex: 1 1 50%;
+  width: auto;
+  min-width: 0;
+  padding: 20px 24px;
+  border-right: 1px solid var(--border-dark);
+}
+
+.preview-wrap.half {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.preview-wrap.half .preview {
+  padding: 24px 24px 60px;
+}
+
 .preview-wrap {
   flex: 1;
   overflow-y: auto;

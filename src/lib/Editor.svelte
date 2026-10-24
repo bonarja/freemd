@@ -19,6 +19,7 @@
   } = $props();
 
   let textareaEl = $state(null);
+  let previewEl = $state(null);
   let exportOpen = $state(false);
 
   const base = $derived(file?.path ? file.path.split('/').slice(0, -1).join('/') : '');
@@ -33,7 +34,7 @@
       resource.type === 'image'
         ? `![${alt}](./${encodeURIComponent(resource.name)})`
         : `[${alt}](./${encodeURIComponent(resource.name)})`;
-    if (mode !== 'edit') mode = 'edit';
+    if (mode === 'preview') mode = 'edit';
     await tick();
     const el = textareaEl;
     if (!el) {
@@ -62,6 +63,15 @@
     content = content.slice(0, start) + '  ' + content.slice(end);
     await tick();
     el.setSelectionRange(start + 2, start + 2);
+  }
+
+  // Sincroniza el scroll del preview con el del editor (modo split).
+  function syncScroll(event) {
+    if (mode !== 'split' || !previewEl) return;
+    const el = event.currentTarget;
+    const range = Math.max(1, el.scrollHeight - el.clientHeight);
+    const ratio = el.scrollTop / range;
+    previewEl.scrollTop = ratio * Math.max(0, previewEl.scrollHeight - previewEl.clientHeight);
   }
 </script>
 
@@ -93,6 +103,7 @@
     </button>
     <div class="seg">
       <button class:active={mode === 'edit'} onclick={() => (mode = 'edit')}>Edición</button>
+      <button class:active={mode === 'split'} onclick={() => (mode = 'split')}>Split</button>
       <button class:active={mode === 'preview'} onclick={() => (mode = 'preview')}>Vista</button>
     </div>
     <button class="save-btn" onclick={() => onsave?.()} disabled={!dirty}>
@@ -128,16 +139,19 @@
     </div>
   </header>
   <div class="editor-body">
-    {#if mode === 'edit'}
+    {#if mode !== 'preview'}
       <textarea
         class="code"
+        class:half={mode === 'split'}
         bind:this={textareaEl}
         bind:value={content}
         onkeydown={handleTab}
+        onscroll={syncScroll}
         spellcheck="false"
       ></textarea>
-    {:else}
-      <div class="preview-wrap">
+    {/if}
+    {#if mode !== 'edit'}
+      <div class="preview-wrap" class:half={mode === 'split'} bind:this={previewEl}>
         <article class="preview">
           {@html html}
         </article>
