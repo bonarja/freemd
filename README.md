@@ -1,89 +1,94 @@
 # openmd
 
-Editor de notas markdown en el navegador, construido con **Node** y **Svelte 5**.
+**English** · [Español](./README.es.md)
+
+A local-first markdown notes app that lives on your machine. One command and you're editing notes in your browser — clean dark UI, live preview, per-note image attachments, and one-click export to PDF or Word.
 
 ```bash
 npx openmd
 ```
 
-Al iniciar abre `http://localhost:5813` en tu navegador.
+That's it: it creates `~/openmd` if it doesn't exist, starts a local server at [http://localhost:5813](http://localhost:5813) and opens your browser.
 
-## Notas
+## Why openmd
 
-Las notas viven en `~/openmd`. Si la carpeta no existe, se crea automáticamente al arrancar.
+- **Your notes are plain files.** Everything is markdown on your own disk, no accounts, no cloud, no lock-in. Back it up, sync it, grep it, own it.
+- **Notes can carry their own images.** Each note is a folder, so screenshots and attachments travel with the note and keep working if you move it.
+- **Built for writing.** Distraction-free editor, rendered preview, or both side by side.
+- **Export that looks right.** Clean, light-themed PDF and `.docx` with syntax-highlighted code and embedded images.
 
-Cada nota es una **carpeta terminada en `-md`** que contiene su contenido en `index.md`:
+## Requirements
+
+Node.js 18 or newer. That's all.
+
+## Usage
+
+```bash
+npx openmd [options]
+```
+
+| Option | Description |
+| --- | --- |
+| `-p, --port <n>` | Server port (default `5813`) |
+| `-d, --dir <path>` | Notes folder (default `~/openmd`) |
+| `-H, --host <addr>` | Listen on another interface; with no value binds `0.0.0.0` (whole local network) |
+| `--no-open` | Don't open the browser automatically |
+| `-v, --version` | Print version |
+| `-h, --help` | Show help |
+
+`OPENMD_PORT`, `OPENMD_DIR` and `OPENMD_HOST` environment variables work too.
+
+### Access from other devices
+
+```bash
+npx openmd --host
+```
+
+This exposes the app on your local network and prints the URL for each network interface, e.g. `http://192.168.1.20:5813` — open it from your phone, tablet or another computer.
+
+> ⚠️ There is no authentication. Anything on your network can reach the app, so only use `--host` on networks you trust.
+
+## How your notes are stored
+
+Everything lives in one folder (by default `~/openmd`):
 
 ```
 ~/openmd
-├── minota-md
-│   ├── index.md
-│   └── mapa.png
-├── recetas-md
+├── trip-to-japan-md
+│   ├── index.md        ← the note itself
+│   ├── day-1.png       ← its images and attachments
+│   └── receipt.pdf
+├── recipes-md
 │   └── index.md
-└── proyectos          <- carpeta normal (sin -md)
-    └── recetas-md
-        └── index.md
+├── work                ← a plain folder (organize as you like)
+│   └── notes-md
+│       └── index.md
+└── readme.md           ← loose .md files work too
 ```
 
-Las imágenes y recursos van junto al `index.md` de la nota y se referencian de forma relativa:
+- A **note** is a folder ending in `-md` whose content lives in `index.md`. The `-md` folder is what keeps the note's images next to its text — you'll never see the folder in the app; you just see `trip-to-japan.md`.
+- Reference images with normal relative paths: `![map](./day-1.png)`.
 
-```markdown
-![Mapa](./mapa.png)
-```
+## The app
 
-## Uso
+- **Sidebar** — your notes and folders. Hover any item to rename (✏️) or delete (🗑); the toolbar icons create notes, folders and upload attachments to the current note.
+- **Editor with three view modes** — *Edición* (raw markdown), *Split* (editor and rendered preview side by side, scroll-synced), *Vista* (rendered preview). Code blocks get syntax highlighting.
+- **Resources panel** — a collapsible panel on the right showing the current note's images as thumbnails. Click one to insert its markdown at the cursor.
+- **Autosave** — changes save automatically 1.2 s after you stop typing (or instantly with `Cmd/Ctrl + S`).
+- **Export** — one click to download the current note as **PDF** or **Word (.docx)**: light-themed, syntax-highlighted code, embedded images, named after the note (`recipes.pdf`, never `index.pdf`). Unsaved changes are saved first.
 
-```bash
-npx openmd [opciones]
-```
-
-| Opción | Descripción |
-| --- | --- |
-| `-p, --port <n>` | Puerto del servidor (por defecto `5813`) |
-| `-d, --dir <ruta>` | Carpeta de notas (por defecto `~/openmd`) |
-| `--no-open` | No abrir el navegador automáticamente |
-| `-v, --version` | Mostrar versión |
-| `-h, --help` | Mostrar ayuda |
-
-También se puede configurar con las variables de entorno `OPENMD_PORT` y `OPENMD_DIR`.
-
-## Interfaz
-
-- **Sidebar** con el árbol de notas y carpetas; cada nota se ve como un archivo `mi-nota.md` (internamente es la carpeta `mi-nota-md` con su `index.md`).
-- **Editor** con toggle **Edición / Split / Vista**: markdown en texto plano, vista dividida (editor y preview sincronizados) o renderizado.
-- Tema **dark minimalista** con la paleta **One Dark** y resaltado de código con `highlight.js`.
-- `Cmd/Ctrl + S` para guardar; además **autoguardado** con debounce (1.2 s después de dejar de escribir).
-- Sube imágenes y recursos a la nota activa con el botón de la sidebar.
-- **Panel de recursos** (plegable, lado derecho): miniaturas de las imágenes de la nota; al hacer click se inserta el markdown `![alt](./imagen.png)` en la posición del cursor.
-- **Exportar** a **PDF** y **Word (.docx)** desde la toolbar: ambos se generan en **tema claro** (A4, estilos tipográficos limpios) con **resaltado de sintaxis** en los bloques de código (paleta atom-one-light), y las imágenes locales de la nota se incrustan en el documento. El archivo se descarga con el nombre de la nota (ej. `recetas.pdf`, no `index.pdf`). Si hay cambios sin guardar, se autoguardan antes de exportar.
-
-## Stack
-
-- **Svelte 5** (runes) + Vite para el frontend.
-- **Express** para servir la app y la API de archivos.
-- **markdown-it** + **markdown-it-highlightjs** + **highlight.js** para el renderizado.
-- **pdfkit** y **docx** (con `image-size`) para la exportación.
-
-## Desarrollo
+## Development
 
 ```bash
 pnpm install
-pnpm dev:server   # servidor en http://localhost:5813 (sin abrir navegador)
-pnpm dev          # vite en http://localhost:5174 (proxifica /api y /media)
+pnpm dev:server   # API server on :5813 (no browser)
+pnpm dev          # Vite dev server on :5174 with HMR
+pnpm build        # production build → dist/
+pnpm start        # serve the production build
 ```
 
-Build de producción (lo que publica el paquete):
+Built with **Svelte 5** and **Vite** on the front, plain **Node + Express** on the back. Markdown rendering by **markdown-it** with **highlight.js**; exports by **pdfkit** and **docx**. See [`AGENTS.md`](./AGENTS.md) for architecture notes.
 
-```bash
-pnpm build
-pnpm start
-```
+## License
 
-## Publicar
-
-```bash
-pnpm publish
-```
-
-El paquete publica solo `bin/`, `server/` y `dist/` (el frontend ya compilado), por lo que `npx openmd` funciona sin ningún paso de build para quien lo instala.
+[MIT](./LICENSE)

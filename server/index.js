@@ -163,8 +163,16 @@ export function createApp(root) {
   app.put('/api/file', json, wrap(async (req, res) => {
     const rel = String(req.body?.path ?? '');
     const abs = safeJoin(root, rel);
-    await fsp.mkdir(path.dirname(abs), { recursive: true });
-    await fsp.writeFile(abs, String(req.body?.content ?? ''), 'utf8');
+    // Sin mkdir: guardar solo funciona sobre archivos que siguen existiendo
+    // (evita recrear la carpeta vieja si la nota fue renombrada o borrada).
+    try {
+      await fsp.writeFile(abs, String(req.body?.content ?? ''), 'utf8');
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        return res.status(404).json({ error: 'El archivo ya no existe' });
+      }
+      throw error;
+    }
     res.json({ ok: true });
   }));
 
@@ -257,6 +265,43 @@ export function createApp(root) {
     res.json({ ok: true });
   }));
 
+  app.patch('/api/entry', json, wrap(async (req, res) => {
+    const rel = String(req.body?.path ?? '').split('\\').join('/');
+    const rawName = String(req.body?.name ?? '');
+    if (!rel) return res.status(400).json({ error: 'Falta la ruta' });
+    const abs = safeJoin(root, rel);
+    const stat = await fsp.stat(abs).catch(() => null);
+    if (!stat) return res.status(404).json({ error: 'El elemento no existe' });
+    const parentRel = path.posix.dirname(rel);
+    const parentAbs = safeJoin(root, parentRel === '.' ? '' : parentRel);
+    const currentName = path.basename(abs);
+
+    let newName;
+    if (stat.isDirectory()) {
+      // notas (carpetas *-md): se admite que el usuario escriba el nombre con .md o -md
+      let base = slug(rawName.replace(/\.md$/i, '').replace(/-md$/i, ''));
+      if (!base) return res.status(400).json({ error: 'Nombre inválido' });
+      if (currentName.endsWith('-md')) base = `${base}-md`;
+      newName = base;
+    } else {
+      const ext = path.extname(rel);
+      const base = slug(rawName.replace(/\.[^.]+$/, ''));
+      if (!base) return res.status(400).json({ error: 'Nombre inválido' });
+      newName = `${base}${ext}`;
+    }
+
+    if (newName === currentName) {
+      return res.json({ ok: true, path: rel, unchanged: true });
+    }
+    const target = path.join(parentAbs, newName);
+    if (fs.existsSync(target)) {
+      return res.status(409).json({ error: 'Ya existe un elemento con ese nombre' });
+    }
+    await fsp.rename(abs, target);
+    const newRel = parentRel === '.' ? newName : `${parentRel}/${newName}`;
+    res.json({ ok: true, path: newRel });
+  }));
+
   app.post('/api/export', json, wrap(async (req, res) => {
     const rel = String(req.body?.path ?? '').split('\\').join('/');
     const format = String(req.body?.format ?? 'pdf');
@@ -325,11 +370,13 @@ export async function start(options = {}) {
   await fsp.mkdir(root, { recursive: true });
   const app = createApp(root);
   const port = options.port ?? (Number(process.env.OPENMD_PORT) || 5813);
+  const host = options.host ?? process.env.OPENMD_HOST ?? 'localhost';
   const server = await new Promise((resolve, reject) => {
-    const instance = app.listen(port, 'localhost', () => resolve(instance));
+    const instance = app.listen(port, host, () => resolve(instance));
     instance.on('error', reject);
   });
-  const url = `http://localhost:${port}`;
+  const display = host === '0.0.0.0' || host === '::' ? 'localhost' : host;
+  const url = `http://${display}:${port}`;
   if (options.open) openBrowser(url);
-  return { server, url, root, port };
+  return { server, url, root, port, host };
 }

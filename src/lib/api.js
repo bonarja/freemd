@@ -32,6 +32,9 @@ export const createFolder = (parent, name) =>
 export const removeEntry = (path) =>
   request(`/api/entry?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
 
+export const renameEntry = (path, name) =>
+  request('/api/entry', { method: 'PATCH', ...json({ path, name }) });
+
 export const getResources = (dir) =>
   request(`/api/resources?dir=${encodeURIComponent(dir)}`);
 

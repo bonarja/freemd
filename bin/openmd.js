@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
+import os from 'node:os';
 import { start } from '../server/index.js';
 
 const args = process.argv.slice(2);
@@ -24,6 +25,7 @@ if (hasFlag('-h', '--help')) {
   Opciones:
     -p, --port <n>     Puerto del servidor (por defecto 5813)
     -d, --dir <ruta>   Carpeta de notas (por defecto ~/openmd)
+    -H, --host <addr>  Escuchar en otra interfaz; sin valor usa 0.0.0.0 (toda la red local)
         --no-open      No abrir el navegador automáticamente
     -v, --version      Mostrar versión
     -h, --help         Mostrar esta ayuda
@@ -51,12 +53,23 @@ if (portArg === undefined) {
 const dir = valueOf('--dir', '-d') ?? process.env.OPENMD_DIR;
 const open = !hasFlag('--no-open');
 
+let hostArg = valueOf('--host', '-H');
+if (hasFlag('--host', '-H') && (hostArg === undefined || hostArg.startsWith('-'))) {
+  hostArg = '0.0.0.0';
+}
+const host = hostArg ?? process.env.OPENMD_HOST;
+
 try {
-  const { url, root } = await start({ port, dir, open });
+  const { url, root } = await start({ port, dir, host, open });
   console.log('');
   console.log(`  openmd ${pkg.version}`);
   console.log(`  notas   ${root}`);
   console.log(`  listo   ${url}`);
+  if (host === '0.0.0.0' || host === '::') {
+    for (const address of lanAddresses(port)) {
+      console.log(`  red     ${address}`);
+    }
+  }
   console.log('');
 } catch (error) {
   if (error.code === 'EADDRINUSE') {
@@ -65,4 +78,15 @@ try {
     console.error(error.message ?? error);
   }
   process.exit(1);
+}
+
+function lanAddresses(port) {
+  const urls = [];
+  for (const addresses of Object.values(os.networkInterfaces())) {
+    for (const entry of addresses ?? []) {
+      if (entry.family !== 'IPv4' || entry.internal) continue;
+      urls.push(`http://${entry.address}:${port}`);
+    }
+  }
+  return urls;
 }

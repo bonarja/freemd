@@ -1,6 +1,7 @@
 <script>
   import Sidebar from './lib/Sidebar.svelte';
   import Editor from './lib/Editor.svelte';
+  import Icon from './lib/Icon.svelte';
   import * as api from './lib/api.js';
 
   let tree = $state(null);
@@ -19,6 +20,11 @@
   let autosaveTimer;
   let flashTimer;
   let fileInput = $state(null);
+  let createRequest = $state(0);
+
+  function requestNewNote() {
+    createRequest++;
+  }
 
   const dirty = $derived(Boolean(current?.text) && content !== saved);
 
@@ -178,6 +184,46 @@
     }
   }
 
+  // Recalcula nombre/crumb visibles tras un renombrado, conservando el buffer.
+  function relabel(path) {
+    const parts = path.split('/');
+    const last = parts[parts.length - 1];
+    const parent = parts.length >= 2 ? parts[parts.length - 2] : '';
+    if (/^index\.md$/i.test(last) && parent.endsWith('-md')) {
+      return {
+        ...current,
+        path,
+        name: `${parent.slice(0, -3)}.md`,
+        dir: parts.length >= 3 ? `${parts.slice(0, -2).join('/')}/` : ''
+      };
+    }
+    return {
+      ...current,
+      path,
+      name: last,
+      dir: parts.length >= 2 ? `${parts.slice(0, -1).join('/')}/` : ''
+    };
+  }
+
+  async function handleRename(node, name) {
+    const target = node.dir ?? node.path;
+    try {
+      clearTimeout(autosaveTimer); // evita guardar en la ruta vieja a mitad del rename
+      const result = await api.renameEntry(target, name);
+      if (
+        current &&
+        result.path !== target &&
+        (current.path === target || current.path.startsWith(`${target}/`))
+      ) {
+        current = relabel(`${result.path}${current.path.slice(target.length)}`);
+      }
+      await refresh();
+      notify('Renombrado');
+    } catch (error) {
+      notify(error.message, 'error');
+    }
+  }
+
   function pickUpload() {
     fileInput?.click();
   }
@@ -213,10 +259,12 @@
     {current}
     {root}
     {uploadDir}
+    {createRequest}
     onopen={openNode}
     oncreate={handleCreate}
     onpick={pickUpload}
     ondelete={handleDelete}
+    onrename={handleRename}
   />
   <main class="main">
     {#if current}
@@ -238,9 +286,13 @@
         <p class="logo">open<span style="color: var(--green)">md</span></p>
         <p>
           {tree && tree.length === 0
-            ? 'Crea tu primera nota con el botón de arriba a la izquierda.'
+            ? 'Todavía no hay notas.'
             : 'Selecciona una nota en el panel lateral.'}
         </p>
+        <button class="primary-btn" onclick={requestNewNote}>
+          <Icon name="note" size={15} />
+          Nueva nota
+        </button>
       </div>
     {/if}
   </main>

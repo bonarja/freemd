@@ -2,10 +2,19 @@
   import TreeItem from './TreeItem.svelte';
   import Icon from './Icon.svelte';
 
-  let { tree, current, root, uploadDir, onopen, oncreate, onpick, ondelete } = $props();
+  let { tree, current, root, uploadDir, createRequest = 0, onopen, oncreate, onpick, ondelete, onrename } = $props();
 
   let creating = $state(null);
   let name = $state('');
+  let handledRequest = 0;
+
+  // La pantalla vacía puede pedir abrir el formulario de nueva nota.
+  $effect(() => {
+    if (createRequest > handledRequest) {
+      handledRequest = createRequest;
+      startCreating('note');
+    }
+  });
 
   function startCreating(type) {
     creating = { type };
@@ -70,7 +79,7 @@
       <p class="tree-empty">Sin notas todavía.<br />Crea la primera con el botón de arriba.</p>
     {:else}
       {#each tree as node (node.path)}
-        <TreeItem {node} {current} depth={0} {onopen} {ondelete} />
+        <TreeItem {node} {current} depth={0} {onopen} {ondelete} {onrename} />
       {/each}
     {/if}
   </nav>
