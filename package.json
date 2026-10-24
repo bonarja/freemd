@@ -1,11 +1,11 @@
 {
-  "name": "openmd",
+  "name": "freemd",
   "version": "0.1.0",
-  "description": "Local markdown notes editor in your browser and export. Run with npx openmd",
+  "description": "Local markdown notes editor in your browser and export. Run with npx freemd",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "openmd": "bin/openmd.js"
+    "freemd": "bin/openmd.js"
   },
   "files": [
     "bin",

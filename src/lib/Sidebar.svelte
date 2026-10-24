@@ -42,7 +42,7 @@
 
 <aside class="sidebar">
   <div class="side-head">
-    <span class="brand">open<span class="brand-md">md</span></span>
+    <span class="brand">free<span class="brand-md">md</span></span>
     <div class="head-actions">
       <button class="icon-btn" title="Nueva nota" onclick={() => startCreating('note')}>
         <Icon name="note" size={16} />

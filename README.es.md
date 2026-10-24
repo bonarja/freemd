@@ -1,16 +1,16 @@
-# openmd
+# freemd
 
 [English](./README.md) · **Español**
 
 Una app de notas en markdown *local-first* que vive en tu máquina. Un comando y estás editando notas en tu navegador — interfaz dark limpia, vista previa en vivo, imágenes por nota y exportación a PDF o Word en un click.
 
 ```bash
-npx openmd
+npx freemd
 ```
 
 Eso es todo: crea `~/openmd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
 
-## Por qué openmd
+## Por qué freemd
 
 - **Tus notas son archivos simples.** Todo es markdown en tu propio disco: sin cuentas, sin nube, sin ataduras. Puedes respaldarlas, sincronizarlas o buscarlas con grep.
 - **Las notas llevan sus propias imágenes.** Cada nota es una carpeta, así que capturas y adjuntos viajan con la nota y siguen funcionando si la mueves.
@@ -24,7 +24,7 @@ Node.js 18 o superior. Nada más.
 ## Uso
 
 ```bash
-npx openmd [opciones]
+npx freemd [opciones]
 ```
 
 | Opción | Descripción |
@@ -41,7 +41,7 @@ También funcionan las variables de entorno `OPENMD_PORT`, `OPENMD_DIR` y `OPENM
 ### Acceder desde otros dispositivos
 
 ```bash
-npx openmd --host
+npx freemd --host
 ```
 
 Expone la app en tu red local e imprime la URL de cada interfaz de red, p. ej. `http://192.168.1.20:5813` — ábrela desde tu teléfono, tablet u otro ordenador.

@@ -311,7 +311,7 @@
       />
     {:else}
       <div class="empty">
-        <p class="logo">open<span style="color: var(--green)">md</span></p>
+        <p class="logo">free<span style="color: var(--green)">md</span></p>
         <p>
           {tree && tree.length === 0
             ? 'Todavía no hay notas.'

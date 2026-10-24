@@ -1,16 +1,16 @@
-# openmd
+# freemd
 
 **English** · [Español](./README.es.md)
 
 A local-first markdown notes app that lives on your machine. One command and you're editing notes in your browser — clean dark UI, live preview, per-note image attachments, and one-click export to PDF or Word.
 
 ```bash
-npx openmd
+npx freemd
 ```
 
 That's it: it creates `~/openmd` if it doesn't exist, starts a local server at [http://localhost:5813](http://localhost:5813) and opens your browser.
 
-## Why openmd
+## Why freemd
 
 - **Your notes are plain files.** Everything is markdown on your own disk, no accounts, no cloud, no lock-in. Back it up, sync it, grep it, own it.
 - **Notes can carry their own images.** Each note is a folder, so screenshots and attachments travel with the note and keep working if you move it.
@@ -24,7 +24,7 @@ Node.js 18 or newer. That's all.
 ## Usage
 
 ```bash
-npx openmd [options]
+npx freemd [options]
 ```
 
 | Option | Description |
@@ -41,7 +41,7 @@ npx openmd [options]
 ### Access from other devices
 
 ```bash
-npx openmd --host
+npx freemd --host
 ```
 
 This exposes the app on your local network and prints the URL for each network interface, e.g. `http://192.168.1.20:5813` — open it from your phone, tablet or another computer.

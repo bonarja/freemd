@@ -17,10 +17,10 @@ const valueOf = (...flags) => {
 
 if (hasFlag('-h', '--help')) {
   console.log(`
-  openmd — editor de notas markdown en el navegador
+  freemd — editor de notas markdown en el navegador
 
   Uso:
-    npx openmd [opciones]
+    npx freemd [opciones]
 
   Opciones:
     -p, --port <n>     Puerto del servidor (por defecto 5813)
@@ -62,7 +62,7 @@ const host = hostArg ?? process.env.OPENMD_HOST;
 try {
   const { url, root } = await start({ port, dir, host, open });
   console.log('');
-  console.log(`  openmd ${pkg.version}`);
+  console.log(`  freemd ${pkg.version}`);
   console.log(`  notas   ${root}`);
   console.log(`  listo   ${url}`);
   if (host === '0.0.0.0' || host === '::') {

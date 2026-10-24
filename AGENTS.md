@@ -1,6 +1,6 @@
-# AGENTS.md — openmd
+# AGENTS.md — freemd
 
-Markdown notes editor: Node/Express CLI (`bin/openmd.js`, intended use `npx openmd`) serving a Svelte 5 + Vite frontend from `dist/`. Notes live in `~/openmd`, created on boot (override: `--dir` / `OPENMD_DIR`).
+Markdown notes editor: Node/Express CLI (`bin/openmd.js`, intended use `npx freemd`) serving a Svelte 5 + Vite frontend from `dist/`. Notes live in `~/openmd`, created on boot (override: `--dir` / `OPENMD_DIR`). The npm package and command are `freemd`; the `~/openmd` data folder predates the rename and stays.
 
 ## Commands
 
