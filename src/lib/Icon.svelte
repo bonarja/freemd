@@ -42,5 +42,8 @@
   {:else if name === 'eye'}
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
     <circle cx="12" cy="12" r="3" />
+  {:else if name === 'x'}
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
   {/if}
 </svg>

@@ -2,11 +2,10 @@
   import TreeItem from './TreeItem.svelte';
   import Icon from './Icon.svelte';
 
-  let { tree, current, root, uploadDir, onopen, oncreate, onupload, ondelete } = $props();
+  let { tree, current, root, uploadDir, onopen, oncreate, onpick, ondelete } = $props();
 
   let creating = $state(null);
   let name = $state('');
-  let fileInput = $state(null);
 
   function startCreating(type) {
     creating = { type };
@@ -27,16 +26,6 @@
     await oncreate?.(type, value);
   }
 
-  function pickFile() {
-    fileInput?.click();
-  }
-
-  async function handleFileChange(event) {
-    const file = event.currentTarget.files?.[0];
-    event.currentTarget.value = '';
-    if (file) await onupload?.(file);
-  }
-
   function autofocus(node) {
     requestAnimationFrame(() => node.focus());
   }
@@ -55,7 +44,7 @@
       <button
         class="icon-btn"
         title="Añadir recurso a la nota actual"
-        onclick={pickFile}
+        onclick={() => onpick?.()}
         disabled={uploadDir === null}
       >
         <Icon name="upload" size={16} />
@@ -87,12 +76,10 @@
   </nav>
 
   <div class="side-foot">
-    <button class="upload-btn" onclick={pickFile} disabled={uploadDir === null}>
+    <button class="upload-btn" onclick={() => onpick?.()} disabled={uploadDir === null}>
       <Icon name="upload" size={14} />
       Añadir recurso
     </button>
     <span class="root-hint" title="Carpeta de notas">{root}</span>
   </div>
-
-  <input type="file" hidden bind:this={fileInput} onchange={handleFileChange} />
 </aside>

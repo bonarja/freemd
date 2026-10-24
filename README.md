@@ -53,8 +53,9 @@ También se puede configurar con las variables de entorno `OPENMD_PORT` y `OPENM
 - **Sidebar** con el árbol de notas y carpetas; cada nota se ve como un archivo `mi-nota.md` (internamente es la carpeta `mi-nota-md` con su `index.md`).
 - **Editor** con toggle **Edición / Vista**: markdown en texto plano o renderizado.
 - Tema **dark minimalista** con la paleta **One Dark** y resaltado de código con `highlight.js`.
-- `Cmd/Ctrl + S` para guardar.
+- `Cmd/Ctrl + S` para guardar; además **autoguardado** con debounce (1.2 s después de dejar de escribir).
 - Sube imágenes y recursos a la nota activa con el botón de la sidebar.
+- **Panel de recursos** (plegable, lado derecho): miniaturas de las imágenes de la nota; al hacer click se inserta el markdown `![alt](./imagen.png)` en la posición del cursor.
 
 ## Stack
 

@@ -10,8 +10,15 @@
   let saved = $state('');
   let mode = $state('edit');
 
+  let resources = $state([]);
+  let panelOpen = $state(false);
+  let savedFlash = $state(false);
+
   let toast = $state(null);
   let toastTimer;
+  let autosaveTimer;
+  let flashTimer;
+  let fileInput = $state(null);
 
   const dirty = $derived(Boolean(current?.text) && content !== saved);
 
@@ -39,6 +46,18 @@
     }
   }
 
+  async function loadResources() {
+    if (uploadDir === null) {
+      resources = [];
+      return;
+    }
+    try {
+      resources = (await api.getResources(uploadDir)).files;
+    } catch {
+      resources = [];
+    }
+  }
+
   async function openNode(node, options = {}) {
     const target = node.path;
     if (
@@ -56,21 +75,36 @@
       content = file.text ? file.content : '';
       saved = content;
       mode = 'edit';
+      await loadResources();
     } catch (error) {
       notify(error.message, 'error');
     }
   }
 
-  async function save() {
+  async function save(auto = false) {
     if (!current?.text) return;
     try {
       await api.saveFile(current.path, content);
       saved = content;
-      notify('Guardado');
+      if (auto) {
+        savedFlash = true;
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => (savedFlash = false), 1600);
+      } else {
+        notify('Guardado');
+      }
     } catch (error) {
       notify(error.message, 'error');
     }
   }
+
+  $effect(() => {
+    const value = content;
+    if (!current?.text || value === saved) return;
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => save(true), 1200);
+    return () => clearTimeout(autosaveTimer);
+  });
 
   async function handleCreate(kind, name) {
     try {
@@ -94,6 +128,8 @@
     try {
       await api.uploadFile(uploadDir, file);
       await refresh();
+      await loadResources();
+      panelOpen = true;
       notify(`Recurso añadido: ${file.name}`);
     } catch (error) {
       notify(error.message, 'error');
@@ -109,12 +145,23 @@
         current = null;
         content = '';
         saved = '';
+        resources = [];
       }
       await refresh();
       notify('Eliminado');
     } catch (error) {
       notify(error.message, 'error');
     }
+  }
+
+  function pickUpload() {
+    fileInput?.click();
+  }
+
+  async function handleFileChange(event) {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (file) await handleUpload(file);
   }
 
   function handleKeydown(event) {
@@ -144,12 +191,23 @@
     {uploadDir}
     onopen={openNode}
     oncreate={handleCreate}
-    onupload={handleUpload}
+    onpick={pickUpload}
     ondelete={handleDelete}
   />
   <main class="main">
     {#if current}
-      <Editor file={current} bind:content bind:mode {dirty} onsave={save} />
+      <Editor
+        file={current}
+        bind:content
+        bind:mode
+        {dirty}
+        {savedFlash}
+        {resources}
+        resourcesEnabled={uploadDir !== null}
+        bind:panelOpen
+        onsave={() => save()}
+        onpick={pickUpload}
+      />
     {:else}
       <div class="empty">
         <p class="logo">open<span style="color: var(--green)">md</span></p>
@@ -164,4 +222,5 @@
   {#if toast}
     <div class="toast {toast.kind}">{toast.message}</div>
   {/if}
+  <input type="file" hidden bind:this={fileInput} onchange={handleFileChange} />
 </div>

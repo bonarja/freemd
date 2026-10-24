@@ -32,6 +32,9 @@ export const createFolder = (parent, name) =>
 export const removeEntry = (path) =>
   request(`/api/entry?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
 
+export const getResources = (dir) =>
+  request(`/api/resources?dir=${encodeURIComponent(dir)}`);
+
 export async function uploadFile(dir, file) {
   const params = new URLSearchParams({ dir, name: file.name });
   const response = await fetch(`/api/upload?${params}`, {

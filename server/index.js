@@ -16,6 +16,8 @@ const TEXT_EXTS = new Set([
   '.java', '.kt', '.c', '.h', '.cpp', '.hpp', '.cs', '.php', '.sql', '.gitignore', '.env'
 ]);
 
+const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif']);
+
 const IGNORED = new Set(['node_modules', '.git', '.DS_Store']);
 const MAX_DEPTH = 6;
 
@@ -164,6 +166,30 @@ export function createApp(root) {
     await fsp.mkdir(abs);
     const rel = parentRel ? `${parentRel}/${name}` : name;
     res.status(201).json({ ok: true, path: rel });
+  }));
+
+  app.get('/api/resources', wrap(async (req, res) => {
+    const dirRel = String(req.query.dir ?? '');
+    const dirAbs = safeJoin(root, dirRel);
+    const stat = await fsp.stat(dirAbs);
+    if (!stat.isDirectory()) return res.status(400).json({ error: 'No es una carpeta' });
+    const entries = await fsp.readdir(dirAbs, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      if (!entry.isFile() || entry.name.startsWith('.') || IGNORED.has(entry.name)) continue;
+      if (entry.name === 'index.md') continue;
+      const ext = path.extname(entry.name).slice(1).toLowerCase();
+      const rel = dirRel ? `${dirRel}/${entry.name}` : entry.name;
+      files.push({
+        name: entry.name,
+        path: rel,
+        ext,
+        type: IMAGE_EXTS.has(ext) ? 'image' : 'file',
+        mediaUrl: `/media/${toRelUrl(rel)}`
+      });
+    }
+    files.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    res.json({ files });
   }));
 
   app.post('/api/upload', express.raw({ type: '*/*', limit: '64mb' }), wrap(async (req, res) => {
