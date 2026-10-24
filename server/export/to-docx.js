@@ -70,7 +70,7 @@ function makeRun(text, state) {
 }
 
 function paragraphOptions(state, spacing = {}) {
-  const options = { spacing: { after: 120, ...spacing } };
+  const options = { spacing: { after: 160, ...spacing } };
   if (state.listContext) {
     if (state.listContext.numbering) options.numbering = state.listContext.numbering;
     else options.bullet = state.listContext.bullet;
@@ -110,14 +110,14 @@ function pushImages(out, images, state) {
       out.push(
         new Paragraph({
           alignment: AlignmentType.CENTER,
-          spacing: { before: 60, after: 120 },
+          spacing: { before: 120, after: 160 },
           children: [run]
         })
       );
     } else {
       out.push(
         new Paragraph({
-          spacing: { before: 60, after: 120 },
+          spacing: { before: 120, after: 160 },
           children: [
             new TextRun({ text: `[imagen no soportada: ${alt}]`, italics: true, color: '808080' })
           ]
@@ -190,6 +190,14 @@ function pushInlineBlock(out, children, state, spacing = {}) {
   }
 }
 
+// Word fusiona los bordes de párrafos contiguos idénticos en un solo recuadro.
+const CODE_BORDER = {
+  top: { style: BorderStyle.SINGLE, size: 4, color: 'D0D7DE', space: 4 },
+  bottom: { style: BorderStyle.SINGLE, size: 4, color: 'D0D7DE', space: 4 },
+  left: { style: BorderStyle.SINGLE, size: 4, color: 'D0D7DE', space: 10 },
+  right: { style: BorderStyle.SINGLE, size: 4, color: 'D0D7DE', space: 10 }
+};
+
 function pushCodeBlock(out, content, info) {
   const segments = highlightSegments(content.replace(/\n$/, ''), info);
   const lines = splitSegmentsByLines(segments);
@@ -197,9 +205,10 @@ function pushCodeBlock(out, content, info) {
     out.push(
       new Paragraph({
         shading: { type: ShadingType.CLEAR, fill: 'F2F2F2' },
+        border: CODE_BORDER,
         spacing: {
-          before: index === 0 ? 120 : 0,
-          after: index === lines.length - 1 ? 120 : 0,
+          before: index === 0 ? 200 : 0,
+          after: index === lines.length - 1 ? 200 : 0,
           line: 240
         },
         indent: { left: 120, right: 120 },
@@ -379,12 +388,12 @@ export function markdownToDocx(tokens, ctx) {
     styles: {
       default: {
         document: { run: { font: 'Calibri', size: 22, color: '1F2328' } },
-        heading1: { run: { size: 40, bold: true, color: '1F2328' } },
-        heading2: { run: { size: 32, bold: true, color: '1F2328' } },
-        heading3: { run: { size: 26, bold: true, color: '1F2328' } },
-        heading4: { run: { size: 24, bold: true, color: '1F2328' } },
-        heading5: { run: { size: 22, bold: true, color: '1F2328' } },
-        heading6: { run: { size: 22, bold: true, color: '595959' } }
+        heading1: { run: { size: 40, bold: true, color: '1F2328' }, paragraph: { spacing: { before: 280, after: 160 } } },
+        heading2: { run: { size: 32, bold: true, color: '1F2328' }, paragraph: { spacing: { before: 280, after: 140 } } },
+        heading3: { run: { size: 26, bold: true, color: '1F2328' }, paragraph: { spacing: { before: 240, after: 120 } } },
+        heading4: { run: { size: 24, bold: true, color: '1F2328' }, paragraph: { spacing: { before: 240, after: 120 } } },
+        heading5: { run: { size: 22, bold: true, color: '1F2328' }, paragraph: { spacing: { before: 200, after: 120 } } },
+        heading6: { run: { size: 22, bold: true, color: '595959' }, paragraph: { spacing: { before: 200, after: 120 } } }
       }
     },
     numbering: { config: [{ reference: 'openmd-ordered', levels: numberingLevels() }] },

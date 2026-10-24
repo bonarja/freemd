@@ -155,10 +155,10 @@ class PdfRenderer {
     if (!runs.length) return;
     runs.forEach((run, index) => {
       const isLast = index === runs.length - 1;
-      doc.font(run.opts.font).fontSize(run.opts.size);
+      // pdfkit no acepta color como opción de .text(): hay que fijar fillColor por run.
+      doc.font(run.opts.font).fontSize(run.opts.size).fillColor(run.opts.color);
       doc.text(run.text || ' ', {
         ...base,
-        color: run.opts.color,
         underline: run.opts.underline,
         link: run.opts.link,
         continued: !isLast,
@@ -184,13 +184,13 @@ class PdfRenderer {
     this.flushRuns(runs, width ? { width } : {});
     doc.x = savedX;
     images.forEach((image) => this.renderImage(image));
-    doc.moveDown(listInfo ? 0.15 : 0.4);
+    doc.moveDown(listInfo ? 0.2 : 0.5);
   }
 
   renderHeading(level, children) {
     const sizes = { 1: 24, 2: 18.5, 3: 15, 4: 12.5, 5: 11.5, 6: 11 };
     const doc = this.doc;
-    doc.moveDown(level <= 2 ? 0.8 : 0.5);
+    doc.moveDown(level <= 2 ? 1.0 : 0.7);
     this.ensureSpace(30);
     const savedBold = this.bold;
     this.bold = true;
@@ -207,16 +207,17 @@ class PdfRenderer {
         .stroke();
       doc.y = y + 4;
     }
-    doc.moveDown(0.4);
+    doc.moveDown(0.5);
     images.forEach((image) => this.renderImage(image));
   }
 
   renderCode(content, info) {
     const doc = this.doc;
-    const fontSize = 9;
-    const lineHeight = 12.5;
-    const pad = 6;
-    const maxChars = Math.floor((this.width - pad * 2) / (fontSize * 0.602));
+    const fontSize = 9.5;
+    const lineHeight = 14;
+    const padX = 10;
+    const padY = 8;
+    const maxChars = Math.floor((this.width - padX * 2) / (fontSize * 0.602));
     const segments = highlightSegments(content.replace(/\n$/, ''), info);
     const lines = [];
     let current = [];
@@ -240,27 +241,49 @@ class PdfRenderer {
       });
     }
     if (current.length || !lines.length) pushLine();
-    doc.moveDown(0.3);
+
+    doc.moveDown(0.4);
     let y = doc.y;
+    let chunkTop = null;
+    let chunkBottom = null;
+    // Cierra el trozo visible del bloque: relleno inferior + borde del recuadro.
+    const closeChunk = () => {
+      if (chunkTop === null) return;
+      doc.rect(this.margins.left - padX, chunkBottom, this.width + padX * 2, padY).fill(COLORS.codeBg);
+      doc
+        .rect(this.margins.left - padX, chunkTop - padY, this.width + padX * 2, chunkBottom - chunkTop + padY * 2)
+        .lineWidth(0.75)
+        .strokeColor(COLORS.border)
+        .stroke();
+      chunkTop = null;
+    };
     for (const segs of lines) {
-      if (y + lineHeight > this.bottom) {
+      if (y + lineHeight + padY > this.bottom) {
+        closeChunk();
         doc.addPage();
         this.pageBreaks++;
         y = doc.y;
       }
-      doc.rect(this.margins.left - pad, y, this.width + pad * 2, lineHeight).fill(COLORS.codeBg);
+      if (chunkTop === null) {
+        chunkTop = y;
+        doc.rect(this.margins.left - padX, y - padY, this.width + padX * 2, padY).fill(COLORS.codeBg);
+      }
+      doc.rect(this.margins.left - padX, y, this.width + padX * 2, lineHeight).fill(COLORS.codeBg);
       let x = this.margins.left;
       for (const seg of segs) {
         doc
           .font('Courier')
           .fontSize(fontSize)
           .fillColor(seg.color ? `#${seg.color}` : COLORS.text);
-        doc.text(seg.text, x, y + 3, { lineBreak: false });
+        doc.text(seg.text, x, y + 4, { lineBreak: false });
         x += doc.widthOfString(seg.text);
       }
       y += lineHeight;
+      chunkBottom = y;
     }
-    doc.y = y + 10;
+    closeChunk();
+    doc.x = this.margins.left;
+    doc.y = chunkBottom + padY + 16;
   }
 
   renderQuote(inner) {
@@ -281,7 +304,7 @@ class PdfRenderer {
         .strokeColor(COLORS.border)
         .stroke();
     }
-    doc.moveDown(0.3);
+    doc.moveDown(0.4);
   }
 
   renderList(tokens, ordered, openToken) {
@@ -290,7 +313,7 @@ class PdfRenderer {
     const indent = (this.listLevel - 1) * 18;
     const baseX = this.margins.left + indent;
     let counter = Number(openToken.attrGet('start') ?? 1) || 1;
-    doc.moveDown(0.2);
+    doc.moveDown(0.3);
     let i = 0;
     while (i < tokens.length) {
       if (tokens[i].type !== 'list_item_open') {
@@ -315,7 +338,7 @@ class PdfRenderer {
     }
     this.listLevel--;
     doc.x = this.margins.left;
-    doc.moveDown(0.2);
+    doc.moveDown(0.4);
   }
 
   renderHr() {
@@ -350,10 +373,11 @@ class PdfRenderer {
     const scale = Math.min(this.width / loaded.width, maxHeight / loaded.height, 1);
     const drawWidth = loaded.width * scale;
     const drawHeight = loaded.height * scale;
-    this.ensureSpace(drawHeight + 10);
+    doc.moveDown(0.3);
+    this.ensureSpace(drawHeight + 14);
     const x = this.margins.left + (this.width - drawWidth) / 2;
     doc.image(loaded.buffer, x, doc.y, { width: drawWidth, height: drawHeight });
-    doc.y += drawHeight + 10;
+    doc.y += drawHeight + 12;
   }
 
   renderTable(tokens) {
