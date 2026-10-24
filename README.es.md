@@ -2,13 +2,15 @@
 
 [English](./README.md) · **Español**
 
-Una app de notas en markdown *local-first* que vive en tu máquina. Un comando y estás editando notas en tu navegador — interfaz dark limpia, vista previa en vivo, imágenes por nota y exportación a PDF o Word en un click.
+Una app de notas en markdown *local* que vive en tu máquina. Un comando y estás editando notas en tu navegador — interfaz dark limpia, vista previa en vivo, imágenes por nota que se pueden agregar desde el portapapeles y exportación a PDF o Word en un click.
 
 ```bash
 npx freemd
 ```
 
 Eso es todo: crea `~/freemd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
+
+<img src="./doc/img1.jpg" alt="img1" width="800">
 
 ## Por qué freemd
 

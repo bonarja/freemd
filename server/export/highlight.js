@@ -99,17 +99,34 @@ function mergeSegments(segments) {
   return merged;
 }
 
-// Devuelve segmentos coloreados del código; sin lenguaje reconocido, texto plano.
+// Subset para auto-detección cuando el fence no declara lenguaje. Se excluyen
+// lenguajes "genéricos" (css, markdown, ini, diff, toml): sobre texto plano
+// producen demasiados falsos positivos.
+const AUTO_SUBSET = [
+  'javascript', 'typescript', 'python', 'json', 'xml', 'bash', 'sql',
+  'java', 'go', 'rust', 'c', 'cpp', 'csharp', 'yaml', 'php', 'ruby'
+];
+
+// Umbral mínimo de relevancia para confiar en la auto-detección: el código
+// real puntúa 3+, el texto plano se queda en 0-2.
+const AUTO_MIN_RELEVANCE = 3;
+
+// Devuelve segmentos coloreados del código. Con lenguaje declarado se respeta;
+// sin lenguaje se intenta auto-detección; sin coincidencias fiables, texto plano.
 export function highlightSegments(code, info) {
   const language = String(info ?? '').trim().split(/\s+/)[0]?.toLowerCase() ?? '';
-  if (!language || !hljs.getLanguage(language)) {
-    return [{ text: code, color: null }];
-  }
   try {
-    return mergeSegments(parseHljsHtml(hljs.highlight(code, { language, ignoreIllegals: true }).value));
-  } catch {
-    return [{ text: code, color: null }];
-  }
+    if (language && hljs.getLanguage(language)) {
+      return mergeSegments(parseHljsHtml(hljs.highlight(code, { language, ignoreIllegals: true }).value));
+    }
+    if (!language) {
+      const result = hljs.highlightAuto(code, AUTO_SUBSET);
+      if (result.language && result.relevance >= AUTO_MIN_RELEVANCE) {
+        return mergeSegments(parseHljsHtml(result.value));
+      }
+    }
+  } catch {}
+  return [{ text: code, color: null }];
 }
 
 // Parte segmentos en líneas conservando el color de cada tramo.
