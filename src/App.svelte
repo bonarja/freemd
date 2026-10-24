@@ -136,6 +136,24 @@
     }
   }
 
+  async function handleExport(format) {
+    if (!current?.text) return;
+    try {
+      if (dirty) await save(true);
+      const blob = await api.exportFile(current.path, format);
+      const name = `${current.name.replace(/\.[^.]+$/, '')}.${format}`;
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = name;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      notify(`Exportado: ${name}`);
+    } catch (error) {
+      notify(error.message, 'error');
+    }
+  }
+
   async function handleDelete(node) {
     if (!confirm(`¿Eliminar "${node.name}"?`)) return;
     try {
@@ -207,6 +225,7 @@
         bind:panelOpen
         onsave={() => save()}
         onpick={pickUpload}
+        onexport={handleExport}
       />
     {:else}
       <div class="empty">

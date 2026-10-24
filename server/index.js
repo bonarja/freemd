@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { exportMarkdown } from './export/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = path.resolve(__dirname, '..', 'dist');
@@ -211,6 +212,35 @@ export function createApp(root) {
     if (abs === root) return res.status(400).json({ error: 'No se puede borrar la carpeta raíz' });
     await fsp.rm(abs, { recursive: true });
     res.json({ ok: true });
+  }));
+
+  app.post('/api/export', json, wrap(async (req, res) => {
+    const rel = String(req.body?.path ?? '').split('\\').join('/');
+    const format = String(req.body?.format ?? 'pdf');
+    if (format !== 'pdf' && format !== 'docx') {
+      return res.status(400).json({ error: 'Formato no soportado' });
+    }
+    const abs = safeJoin(root, rel);
+    let stat;
+    try {
+      stat = await fsp.stat(abs);
+    } catch {
+      return res.status(404).json({ error: 'El archivo no existe' });
+    }
+    if (!stat.isFile()) return res.status(400).json({ error: 'No es un archivo' });
+    const source = await fsp.readFile(abs, 'utf8');
+    const dirName = path.posix.dirname(rel);
+    const baseRel = dirName === '.' ? '' : dirName;
+    const title = path.basename(rel).replace(/\.(md|markdown)$/i, '');
+    const buffer = await exportMarkdown(source, { format, root, baseRel, title });
+    res.setHeader(
+      'content-type',
+      format === 'pdf'
+        ? 'application/pdf'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    res.setHeader('content-disposition', `attachment; filename*=UTF-8''${encodeURIComponent(title)}.${format}`);
+    res.send(buffer);
   }));
 
   app.use('/media', express.static(root, { fallthrough: false }));

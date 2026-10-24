@@ -14,10 +14,12 @@
     resourcesEnabled = false,
     panelOpen = $bindable(false),
     onsave,
-    onpick
+    onpick,
+    onexport
   } = $props();
 
   let textareaEl = $state(null);
+  let exportOpen = $state(false);
 
   const base = $derived(file?.path ? file.path.split('/').slice(0, -1).join('/') : '');
   const html = $derived(file?.text ? render(content, base) : '');
@@ -44,6 +46,11 @@
     await tick();
     el.focus();
     el.setSelectionRange(start + snippet.length, start + snippet.length);
+  }
+
+  function handleExport(format) {
+    exportOpen = false;
+    onexport?.(format);
   }
 
   async function handleTab(event) {
@@ -92,6 +99,33 @@
       <Icon name="save" size={14} />
       Guardar
     </button>
+    <div class="export-wrap">
+      <button class="save-btn" onclick={() => (exportOpen = !exportOpen)} disabled={!file?.text}>
+        <Icon name="download" size={14} />
+        Exportar
+        <span class="export-chev" class:open={exportOpen}>
+          <Icon name="chevron-down" size={12} />
+        </span>
+      </button>
+      {#if exportOpen}
+        <button
+          class="menu-backdrop"
+          tabindex="-1"
+          aria-label="Cerrar menú"
+          onclick={() => (exportOpen = false)}
+        ></button>
+        <div class="export-menu">
+          <button onclick={() => handleExport('pdf')}>
+            <Icon name="file" size={14} />
+            PDF
+          </button>
+          <button onclick={() => handleExport('docx')}>
+            <Icon name="file" size={14} />
+            Word (.docx)
+          </button>
+        </div>
+      {/if}
+    </div>
   </header>
   <div class="editor-body">
     {#if mode === 'edit'}

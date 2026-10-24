@@ -56,12 +56,14 @@ También se puede configurar con las variables de entorno `OPENMD_PORT` y `OPENM
 - `Cmd/Ctrl + S` para guardar; además **autoguardado** con debounce (1.2 s después de dejar de escribir).
 - Sube imágenes y recursos a la nota activa con el botón de la sidebar.
 - **Panel de recursos** (plegable, lado derecho): miniaturas de las imágenes de la nota; al hacer click se inserta el markdown `![alt](./imagen.png)` en la posición del cursor.
+- **Exportar** a **PDF** y **Word (.docx)** desde la toolbar: ambos se generan en **tema claro** (A4, estilos tipográficos limpios) y las imágenes locales de la nota se incrustan en el documento. Si hay cambios sin guardar, se autoguardan antes de exportar.
 
 ## Stack
 
 - **Svelte 5** (runes) + Vite para el frontend.
 - **Express** para servir la app y la API de archivos.
 - **markdown-it** + **markdown-it-highlightjs** + **highlight.js** para el renderizado.
+- **pdfkit** y **docx** (con `image-size`) para la exportación.
 
 ## Desarrollo
 

@@ -35,6 +35,24 @@ export const removeEntry = (path) =>
 export const getResources = (dir) =>
   request(`/api/resources?dir=${encodeURIComponent(dir)}`);
 
+export async function exportFile(path, format) {
+  const response = await fetch('/api/export', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ path, format })
+  });
+  if (!response.ok) {
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+    throw new Error(data?.error ?? `Error ${response.status}`);
+  }
+  return response.blob();
+}
+
 export async function uploadFile(dir, file) {
   const params = new URLSearchParams({ dir, name: file.name });
   const response = await fetch(`/api/upload?${params}`, {
