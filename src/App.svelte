@@ -140,8 +140,14 @@
     if (!current?.text) return;
     try {
       if (dirty) await save(true);
-      const blob = await api.exportFile(current.path, format);
-      const name = `${current.name.replace(/\.[^.]+$/, '')}.${format}`;
+      const { blob, filename } = await api.exportFile(current.path, format);
+      // Nombre visible: la nota (mi-nota.md), no index.md
+      const parts = current.path.split('/');
+      let base = current.name.replace(/\.[^.]+$/, '');
+      if (/^index$/i.test(base) && parts.length >= 2) {
+        base = parts[parts.length - 2].replace(/-md$/, '') || base;
+      }
+      const name = filename ?? `${base}.${format}`;
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;

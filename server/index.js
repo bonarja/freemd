@@ -231,7 +231,12 @@ export function createApp(root) {
     const source = await fsp.readFile(abs, 'utf8');
     const dirName = path.posix.dirname(rel);
     const baseRel = dirName === '.' ? '' : dirName;
-    const title = path.basename(rel).replace(/\.(md|markdown)$/i, '');
+    // El nombre del documento es el de la nota; para notas (index.md) se usa la carpeta sin -md.
+    let title = path.basename(rel).replace(/\.(md|markdown)$/i, '');
+    if (/^index$/i.test(title)) {
+      const folder = path.basename(dirName).replace(/-md$/, '');
+      if (folder && folder !== '.') title = folder;
+    }
     const buffer = await exportMarkdown(source, { format, root, baseRel, title });
     res.setHeader(
       'content-type',

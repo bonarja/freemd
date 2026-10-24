@@ -56,7 +56,7 @@ También se puede configurar con las variables de entorno `OPENMD_PORT` y `OPENM
 - `Cmd/Ctrl + S` para guardar; además **autoguardado** con debounce (1.2 s después de dejar de escribir).
 - Sube imágenes y recursos a la nota activa con el botón de la sidebar.
 - **Panel de recursos** (plegable, lado derecho): miniaturas de las imágenes de la nota; al hacer click se inserta el markdown `![alt](./imagen.png)` en la posición del cursor.
-- **Exportar** a **PDF** y **Word (.docx)** desde la toolbar: ambos se generan en **tema claro** (A4, estilos tipográficos limpios) y las imágenes locales de la nota se incrustan en el documento. Si hay cambios sin guardar, se autoguardan antes de exportar.
+- **Exportar** a **PDF** y **Word (.docx)** desde la toolbar: ambos se generan en **tema claro** (A4, estilos tipográficos limpios) con **resaltado de sintaxis** en los bloques de código (paleta atom-one-light), y las imágenes locales de la nota se incrustan en el documento. El archivo se descarga con el nombre de la nota (ej. `recetas.pdf`, no `index.pdf`). Si hay cambios sin guardar, se autoguardan antes de exportar.
 
 ## Stack
 

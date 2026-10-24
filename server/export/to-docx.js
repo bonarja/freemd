@@ -14,6 +14,7 @@ import {
   TextRun,
   WidthType
 } from 'docx';
+import { highlightSegments, splitSegmentsByLines } from './highlight.js';
 
 // Formatos que docx puede incrustar; el resto se exporta como marcador visible.
 const DOCX_TYPES = new Set(['png', 'jpg', 'gif', 'bmp']);
@@ -189,9 +190,10 @@ function pushInlineBlock(out, children, state, spacing = {}) {
   }
 }
 
-function pushCodeBlock(out, content) {
-  const lines = content.replace(/\n$/, '').split('\n');
-  lines.forEach((line, index) => {
+function pushCodeBlock(out, content, info) {
+  const segments = highlightSegments(content.replace(/\n$/, ''), info);
+  const lines = splitSegmentsByLines(segments);
+  lines.forEach((segs, index) => {
     out.push(
       new Paragraph({
         shading: { type: ShadingType.CLEAR, fill: 'F2F2F2' },
@@ -201,7 +203,14 @@ function pushCodeBlock(out, content) {
           line: 240
         },
         indent: { left: 120, right: 120 },
-        children: [new TextRun({ text: line || ' ', font: CODE_FONT, size: 18, color: '1F2328' })]
+        children: segs.length
+          ? segs.map((seg) => new TextRun({
+              text: seg.text,
+              font: CODE_FONT,
+              size: 18,
+              color: seg.color ?? '1F2328'
+            }))
+          : [new TextRun({ text: ' ', font: CODE_FONT, size: 18, color: '1F2328' })]
       })
     );
   });
@@ -307,7 +316,7 @@ function renderBlocks(tokens, state) {
       case 'fence':
       case 'code_block':
         i++;
-        pushCodeBlock(out, token.content);
+        pushCodeBlock(out, token.content, token.info);
         break;
       case 'blockquote_open': {
         const close = findClose(tokens, i, 'blockquote_open', 'blockquote_close');

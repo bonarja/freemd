@@ -50,7 +50,10 @@ export async function exportFile(path, format) {
     }
     throw new Error(data?.error ?? `Error ${response.status}`);
   }
-  return response.blob();
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const match = /filename\*=UTF-8''([^;\s]+)/i.exec(disposition);
+  const filename = match ? decodeURIComponent(match[1]) : null;
+  return { blob: await response.blob(), filename };
 }
 
 export async function uploadFile(dir, file) {

@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { highlightSegments } from './highlight.js';
 
 // Formatos raster que pdfkit puede incrustar; el resto se exporta como marcador visible.
 const PDF_TYPES = new Set(['png', 'jpg']);
@@ -210,39 +211,53 @@ class PdfRenderer {
     images.forEach((image) => this.renderImage(image));
   }
 
-  renderCode(content) {
+  renderCode(content, info) {
     const doc = this.doc;
     const fontSize = 9;
     const lineHeight = 12.5;
     const pad = 6;
     const maxChars = Math.floor((this.width - pad * 2) / (fontSize * 0.602));
+    const segments = highlightSegments(content.replace(/\n$/, ''), info);
     const lines = [];
-    for (const raw of content.replace(/\n$/, '').split('\n')) {
-      if (raw.length <= maxChars) {
-        lines.push(raw || ' ');
-        continue;
-      }
-      let rest = raw;
-      while (rest.length > maxChars) {
-        lines.push(rest.slice(0, maxChars));
-        rest = rest.slice(maxChars);
-      }
-      lines.push(rest || ' ');
+    let current = [];
+    let count = 0;
+    const pushLine = () => {
+      lines.push(current);
+      current = [];
+      count = 0;
+    };
+    for (const segment of segments) {
+      const pieces = segment.text.split('\n');
+      pieces.forEach((piece, index) => {
+        if (index > 0) pushLine();
+        while (piece.length > 0) {
+          if (count >= maxChars) pushLine();
+          const take = Math.min(maxChars - count, piece.length);
+          current.push({ text: piece.slice(0, take), color: segment.color });
+          count += take;
+          piece = piece.slice(take);
+        }
+      });
     }
+    if (current.length || !lines.length) pushLine();
     doc.moveDown(0.3);
     let y = doc.y;
-    for (const line of lines) {
+    for (const segs of lines) {
       if (y + lineHeight > this.bottom) {
         doc.addPage();
         this.pageBreaks++;
         y = doc.y;
       }
       doc.rect(this.margins.left - pad, y, this.width + pad * 2, lineHeight).fill(COLORS.codeBg);
-      doc
-        .fillColor(COLORS.text)
-        .font('Courier')
-        .fontSize(fontSize)
-        .text(line, this.margins.left, y + 3, { lineBreak: false });
+      let x = this.margins.left;
+      for (const seg of segs) {
+        doc
+          .font('Courier')
+          .fontSize(fontSize)
+          .fillColor(seg.color ? `#${seg.color}` : COLORS.text);
+        doc.text(seg.text, x, y + 3, { lineBreak: false });
+        x += doc.widthOfString(seg.text);
+      }
       y += lineHeight;
     }
     doc.y = y + 10;
@@ -452,7 +467,7 @@ class PdfRenderer {
         case 'fence':
         case 'code_block':
           i++;
-          this.renderCode(token.content);
+          this.renderCode(token.content, token.info);
           break;
         case 'blockquote_open': {
           const close = findClose(tokens, i, 'blockquote_open', 'blockquote_close');
