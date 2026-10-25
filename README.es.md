@@ -10,7 +10,7 @@ npx freemd
 
 Eso es todo: crea `~/freemd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
 
-![img1](./doc/img1.jpeg)
+<img src="https://raw.githubusercontent.com/bonarja/freemd/main/doc/img1.jpg" alt="img1" width="800">
 
 ## Por qué freemd
 

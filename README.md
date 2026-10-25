@@ -10,7 +10,7 @@ npx freemd
 
 That's it: it creates `~/freemd` if it doesn't exist, starts a local server at [http://localhost:5813](http://localhost:5813) and opens your browser.
 
-![img1](./doc/img1.jpeg)
+<img src="https://raw.githubusercontent.com/bonarja/freemd/main/doc/img1.jpg" alt="img1" width="800">
 
 ## Why freemd
 
