@@ -1,13 +1,13 @@
 # AGENTS.md — freemd
 
-Markdown notes editor: Node/Express CLI (`bin/openmd.js`, intended use `npx freemd`) serving a Svelte 5 + Vite frontend from `dist/`. Notes live in `~/freemd`, created on boot (override: `--dir` / `FREEMD_DIR`); a legacy `~/openmd` folder is auto-renamed to `~/freemd` on first boot when the latter doesn't exist.
+Markdown notes editor: Node/Express CLI (`bin/freemd.js`, intended use `npx freemd`) serving a Svelte 5 + Vite frontend from `dist/`. Notes live in `~/freemd`, created on boot (override: `--dir` / `FREEMD_DIR`).
 
 ## Commands
 
 - **Use pnpm, never npm** (project constraint).
 - `pnpm build` — Vite build → `dist/`. Required before `pnpm start` and before publishing: the server only serves static files from `dist/` and returns an error page without it.
 - `pnpm dev:server` — API server on `:5813` with `--no-open`. Pair with `pnpm dev` (Vite on `:5174`, proxies `/api` and `/media` to `:5813`).
-- No test suite or linter. Verify changes with `pnpm build` plus manual curl calls against a scratch root: `node bin/openmd.js --dir <tmp> --port 5899 --no-open`. To eyeball exported PDF/docx on macOS: `qlmanage -t -s 900 -o <dir> <file>`.
+- No test suite or linter. Verify changes with `pnpm build` plus manual curl calls against a scratch root: `node bin/freemd.js --dir <tmp> --port 5899 --no-open`. To eyeball exported PDF/docx on macOS: `qlmanage -t -s 900 -o <dir> <file>`. To exercise the export engine headlessly (no server): `node bin/freemd.js convert <file.md> --pdf|--docx [-o <out>]` — images resolve relative to the source file.
 - pnpm v11 blocks esbuild's postinstall; `pnpm-workspace.yaml` whitelists it (`onlyBuiltDependencies`). If a fresh install fails with `ERR_PNPM_IGNORED_BUILDS`, run `pnpm approve-builds --all`.
 
 ## Data model (core invariant)

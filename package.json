@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "freemd": "bin/openmd.js"
+    "freemd": "bin/freemd.js"
   },
   "files": [
     "bin",
@@ -19,9 +19,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:server": "node bin/openmd.js --no-open",
+    "dev:server": "node bin/freemd.js --no-open",
     "build": "vite build",
-    "start": "node bin/openmd.js"
+    "start": "node bin/freemd.js"
   },
   "dependencies": {
     "docx": "^9.14.0",

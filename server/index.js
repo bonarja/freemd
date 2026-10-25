@@ -367,16 +367,6 @@ function openBrowser(url) {
 
 export async function start(options = {}) {
   const root = path.resolve(options.dir ?? path.join(os.homedir(), 'freemd'));
-  // Migración única: si existe la carpeta antigua ~/openmd y aún no hay ~/freemd,
-  // la renombramos para que las notas no se "pierdan" tras el renombrado.
-  let migrated = null;
-  const legacyRoot = path.join(os.homedir(), 'openmd');
-  if (!fs.existsSync(root) && fs.existsSync(legacyRoot)) {
-    try {
-      await fsp.rename(legacyRoot, root);
-      migrated = legacyRoot;
-    } catch {}
-  }
   await fsp.mkdir(root, { recursive: true });
   const app = createApp(root);
   const port = options.port ?? (Number(process.env.FREEMD_PORT) || 5813);
@@ -388,5 +378,5 @@ export async function start(options = {}) {
   const display = host === '0.0.0.0' || host === '::' ? 'localhost' : host;
   const url = `http://${display}:${port}`;
   if (options.open) openBrowser(url);
-  return { server, url, root, port, host, migrated };
+  return { server, url, root, port, host };
 }

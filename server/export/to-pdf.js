@@ -529,7 +529,7 @@ export function markdownToPdf(tokens, ctx) {
     const doc = new PDFDocument({
       size: 'A4',
       margins: { top: 60, bottom: 60, left: 60, right: 60 },
-      info: { Title: ctx.title, Creator: 'openmd' }
+      info: { Title: ctx.title, Creator: 'freemd' }
     });
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));

@@ -18,6 +18,7 @@ Eso es todo: crea `~/freemd` si no existe, levanta un servidor local en [http://
 - **Las notas llevan sus propias imágenes.** Cada nota es una carpeta, así que capturas y adjuntos viajan con la nota y siguen funcionando si la mueves.
 - **Pensada para escribir.** Editor sin distracciones, vista renderizada, o ambas en paralelo.
 - **Exportación con buena pinta.** PDF y `.docx` con tema claro, código resaltado e imágenes incrustadas.
+- **Convierte cualquier markdown desde la terminal.** `freemd convert report.md --pdf` transforma cualquier `.md` de tu disco en un PDF o documento Word pulido — sin servidor ni navegador.
 
 ## Requisitos
 
@@ -49,6 +50,18 @@ npx freemd --host
 Expone la app en tu red local e imprime la URL de cada interfaz de red, p. ej. `http://192.168.1.20:5813` — ábrela desde tu teléfono, tablet u otro ordenador.
 
 > ⚠️ No hay autenticación. Cualquier equipo de tu red puede acceder a la app, así que usa `--host` solo en redes de confianza.
+
+### Convertir archivos desde la línea de comandos
+
+El mismo motor de exportación también funciona sin servidor ni navegador sobre cualquier archivo markdown:
+
+```bash
+npx freemd convert report.md --pdf            # → report.pdf
+npx freemd convert report.md --pdf --docx     # ambos a la vez
+npx freemd convert report.md --docx -o out.docx
+```
+
+Las imágenes relativas se resuelven junto al archivo fuente, el código lleva resaltado de sintaxis y la salida usa el mismo tema claro de la exportación de la app.
 
 ## Cómo se guardan tus notas
 

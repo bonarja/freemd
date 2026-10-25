@@ -18,6 +18,7 @@ That's it: it creates `~/freemd` if it doesn't exist, starts a local server at [
 - **Notes can carry their own images.** Each note is a folder, so screenshots and attachments travel with the note and keep working if you move it.
 - **Built for writing.** Distraction-free editor, rendered preview, or both side by side.
 - **Export that looks right.** Clean, light-themed PDF and `.docx` with syntax-highlighted code and embedded images.
+- **Converts any markdown file from the terminal.** `freemd convert report.md --pdf` turns any `.md` on your disk into a polished PDF or Word document — no server, no browser.
 
 ## Requirements
 
@@ -49,6 +50,18 @@ npx freemd --host
 This exposes the app on your local network and prints the URL for each network interface, e.g. `http://192.168.1.20:5813` — open it from your phone, tablet or another computer.
 
 > ⚠️ There is no authentication. Anything on your network can reach the app, so only use `--host` on networks you trust.
+
+### Convert files from the command line
+
+The same export engine also works headlessly on any markdown file — no server, no browser:
+
+```bash
+npx freemd convert report.md --pdf            # → report.pdf
+npx freemd convert report.md --pdf --docx     # both at once
+npx freemd convert report.md --docx -o out.docx
+```
+
+Relative images resolve next to the source file, code blocks get syntax highlighting, and the output uses the same clean light theme as the in-app export.
 
 ## How your notes are stored
 

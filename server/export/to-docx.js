@@ -283,7 +283,7 @@ function renderListItems(tokens, state, ordered, instance, level) {
     const close = findClose(tokens, i, 'list_item_open', 'list_item_close');
     const previous = state.listContext;
     state.listContext = ordered
-      ? { numbering: { reference: 'openmd-ordered', level: Math.min(level, 5), instance } }
+      ? { numbering: { reference: 'freemd-ordered', level: Math.min(level, 5), instance } }
       : { bullet: { level: Math.min(level, 8) } };
     out.push(...renderBlocks(tokens.slice(i + 1, close), state));
     state.listContext = previous;
@@ -384,7 +384,7 @@ export function markdownToDocx(tokens, ctx) {
   };
   const doc = new Document({
     title: ctx.title,
-    creator: 'openmd',
+    creator: 'freemd',
     styles: {
       default: {
         document: { run: { font: 'Calibri', size: 22, color: '1F2328' } },
@@ -396,7 +396,7 @@ export function markdownToDocx(tokens, ctx) {
         heading6: { run: { size: 22, bold: true, color: '595959' }, paragraph: { spacing: { before: 200, after: 120 } } }
       }
     },
-    numbering: { config: [{ reference: 'openmd-ordered', levels: numberingLevels() }] },
+    numbering: { config: [{ reference: 'freemd-ordered', levels: numberingLevels() }] },
     sections: [{ properties: {}, children: renderBlocks(tokens, state) }]
   });
   return Packer.toBuffer(doc);
