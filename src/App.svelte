@@ -82,7 +82,7 @@
       current &&
       target !== current.path &&
       dirty &&
-      !confirm('Hay cambios sin guardar. ¿Continuar sin guardar?')
+      !confirm('There are unsaved changes. Continue without saving?')
     ) {
       return;
     }
@@ -108,7 +108,7 @@
         clearTimeout(flashTimer);
         flashTimer = setTimeout(() => (savedFlash = false), 1600);
       } else {
-        notify('Guardado');
+        notify('Saved');
       }
     } catch (error) {
       notify(error.message, 'error');
@@ -129,11 +129,11 @@
         const result = await api.createNote(name);
         await refresh();
         await openNode({ path: result.path, type: 'file' }, { force: true });
-        notify('Nota creada');
+        notify('Note created');
       } else {
         await api.createFolder('', name);
         await refresh();
-        notify('Carpeta creada');
+        notify('Folder created');
       }
     } catch (error) {
       notify(error.message, 'error');
@@ -156,7 +156,7 @@
 
   async function handleUpload(file) {
     const result = await uploadResource(file);
-    if (result) notify(`Recurso añadido: ${file.name}`);
+    if (result) notify(`Resource added: ${file.name}`);
   }
 
   // El pegado necesita el recurso con forma { name, path, type } para insertarlo.
@@ -164,16 +164,16 @@
     const result = await uploadResource(file);
     if (!result) return null;
     const name = result.name ?? result.path.split('/').pop();
-    notify(`Imagen pegada: ${name}`);
+    notify(`Image pasted: ${name}`);
     return { name, path: result.path, type: 'image' };
   }
 
   async function handleRemoveResource(resource) {
-    if (!confirm(`¿Eliminar "${resource.name}"?`)) return;
+    if (!confirm(`Delete "${resource.name}"?`)) return;
     try {
       await api.removeEntry(resource.path);
       await loadResources();
-      notify('Recurso eliminado');
+      notify('Resource deleted');
     } catch (error) {
       notify(error.message, 'error');
     }
@@ -197,14 +197,14 @@
       anchor.download = name;
       anchor.click();
       URL.revokeObjectURL(url);
-      notify(`Exportado: ${name}`);
+      notify(`Exported: ${name}`);
     } catch (error) {
       notify(error.message, 'error');
     }
   }
 
   async function handleDelete(node) {
-    if (!confirm(`¿Eliminar "${node.name}"?`)) return;
+    if (!confirm(`Delete "${node.name}"?`)) return;
     try {
       const target = node.dir ?? node.path;
       await api.removeEntry(target);
@@ -215,7 +215,7 @@
         resources = [];
       }
       await refresh();
-      notify('Eliminado');
+      notify('Deleted');
     } catch (error) {
       notify(error.message, 'error');
     }
@@ -255,7 +255,7 @@
         current = relabel(`${result.path}${current.path.slice(target.length)}`);
       }
       await refresh();
-      notify('Renombrado');
+      notify('Renamed');
     } catch (error) {
       notify(error.message, 'error');
     }
@@ -332,19 +332,17 @@
     {:else}
       <div class="empty">
         {#if !sidebarOpen}
-          <button class="icon-btn sidebar-open" title="Mostrar notas (⌘B)" onclick={toggleSidebar}>
+          <button class="icon-btn sidebar-open" title="Show notes (⌘B)" onclick={toggleSidebar}>
             <Icon name="panel" size={16} />
           </button>
         {/if}
         <p class="logo">free<span style="color: var(--green)">md</span></p>
         <p>
-          {tree && tree.length === 0
-            ? 'Todavía no hay notas.'
-            : 'Selecciona una nota en el panel lateral.'}
+          {tree && tree.length === 0 ? 'No notes yet.' : 'Select a note in the sidebar.'}
         </p>
         <button class="primary-btn" onclick={requestNewNote}>
           <Icon name="note" size={15} />
-          Nueva nota
+          New note
         </button>
       </div>
     {/if}

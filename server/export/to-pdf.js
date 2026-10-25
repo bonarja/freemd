@@ -365,7 +365,7 @@ class PdfRenderer {
         .font('Helvetica-Oblique')
         .fontSize(10)
         .fillColor(COLORS.muted)
-        .text(`[imagen no soportada: ${alt}]`, { align: 'center' });
+        .text(`[unsupported image: ${alt}]`, { align: 'center' });
       doc.moveDown(0.5);
       return;
     }

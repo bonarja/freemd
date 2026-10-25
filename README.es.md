@@ -10,7 +10,7 @@ npx freemd
 
 Eso es todo: crea `~/freemd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
 
-<img src="./doc/img1.jpg" alt="img1" width="800">
+![img1](./doc/img1.jpeg)
 
 ## Por qué freemd
 
@@ -74,11 +74,11 @@ Todo vive en una carpeta (por defecto `~/freemd`):
 ## La app
 
 - **Sidebar** — tus notas y carpetas. Al pasar el cursor sobre un elemento aparecen renombrar (✏️) y eliminar (🗑); los iconos de la cabecera crean notas, carpetas y suben adjuntos a la nota actual. Puedes plegarla con el botón de panel o `Cmd/Ctrl + B` (el estado se recuerda).
-- **Editor con tres modos** — *Edición* (markdown crudo), *Split* (editor y vista renderizada lado a lado, con scroll sincronizado), *Vista* (solo preview). Los bloques de código llevan resaltado de sintaxis.
+- **Editor con tres modos** — *Edit* (markdown crudo), *Split* (editor y vista renderizada lado a lado, con scroll sincronizado), *Preview* (solo preview). Los bloques de código llevan resaltado de sintaxis.
 - **Panel de recursos** — panel plegable a la derecha con las imágenes de la nota actual en miniaturas. Haz click en una para insertar su markdown en el cursor; al pasar el cursor puedes eliminarla.
 - **Pegar imágenes** — copia una captura o imagen y pulsa `Cmd/Ctrl + V` sobre la nota: se guarda en la carpeta de la nota y se inserta su markdown en el cursor.
-- **Autoguardado** — los cambios se guardan solos 1.2 s después de dejar de escribir (o al instante con `Cmd/Ctrl + S`).
-- **Exportar** — un click para descargar la nota como **PDF** o **Word (.docx)**: tema claro, código resaltado, imágenes incrustadas y con el nombre de la nota (`recetas.pdf`, nunca `index.pdf`). Si hay cambios sin guardar, se guardan primero.
+- **Autosave** — los cambios se guardan solos 1.2 s después de dejar de escribir (o al instante con `Cmd/Ctrl + S`).
+- **Export** — un click para descargar la nota como **PDF** o **Word (.docx)**: tema claro, código resaltado, imágenes incrustadas y con el nombre de la nota (`recetas.pdf`, nunca `index.pdf`). Si hay cambios sin guardar, se guardan primero.
 
 ## Desarrollo
 

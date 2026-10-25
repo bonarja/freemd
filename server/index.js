@@ -27,7 +27,7 @@ const isNoteName = (name) => name.endsWith('-md');
 function safeJoin(root, rel = '') {
   const abs = path.resolve(root, rel);
   if (abs !== root && !abs.startsWith(root + path.sep)) {
-    const error = new Error('Ruta no permitida');
+    const error = new Error('Path not allowed');
     error.status = 400;
     throw error;
   }
@@ -138,10 +138,10 @@ export function createApp(root) {
           }
         } catch {}
       }
-      if (!stat) return res.status(404).json({ error: 'El archivo no existe' });
+      if (!stat) return res.status(404).json({ error: 'File not found' });
     }
     if (!stat.isFile()) {
-      return res.status(400).json({ error: 'No es un archivo' });
+      return res.status(400).json({ error: 'Not a file' });
     }
     const ext = path.extname(abs).toLowerCase();
     const { name, dir } = fileLabels(rel);
@@ -169,7 +169,7 @@ export function createApp(root) {
       await fsp.writeFile(abs, String(req.body?.content ?? ''), 'utf8');
     } catch (error) {
       if (error.code === 'ENOENT') {
-        return res.status(404).json({ error: 'El archivo ya no existe' });
+        return res.status(404).json({ error: 'The file no longer exists' });
       }
       throw error;
     }
@@ -178,12 +178,12 @@ export function createApp(root) {
 
   app.post('/api/file', json, wrap(async (req, res) => {
     const name = slug(req.body?.name);
-    if (!name) return res.status(400).json({ error: 'Nombre inválido' });
+    if (!name) return res.status(400).json({ error: 'Invalid name' });
     const parentRel = String(req.body?.parent ?? '');
     const parentAbs = safeJoin(root, parentRel);
     const rel = parentRel ? `${parentRel}/${name}.md` : `${name}.md`;
     const abs = path.join(parentAbs, `${name}.md`);
-    if (fs.existsSync(abs)) return res.status(409).json({ error: 'Ya existe un archivo con ese nombre' });
+    if (fs.existsSync(abs)) return res.status(409).json({ error: 'A file with that name already exists' });
     await fsp.writeFile(abs, String(req.body?.content ?? ''), 'utf8');
     res.status(201).json({ ok: true, path: rel });
   }));
@@ -191,12 +191,12 @@ export function createApp(root) {
   app.post('/api/note', json, wrap(async (req, res) => {
     const raw = String(req.body?.name ?? '').trim();
     let base = slug(raw);
-    if (!base) return res.status(400).json({ error: 'Nombre inválido' });
+    if (!base) return res.status(400).json({ error: 'Invalid name' });
     base = base.replace(/-md$/, '');
-    if (!base) return res.status(400).json({ error: 'Nombre inválido' });
+    if (!base) return res.status(400).json({ error: 'Invalid name' });
     const folder = `${base}-md`;
     const abs = path.join(root, folder);
-    if (fs.existsSync(abs)) return res.status(409).json({ error: 'Ya existe una nota con ese nombre' });
+    if (fs.existsSync(abs)) return res.status(409).json({ error: 'A note with that name already exists' });
     await fsp.mkdir(abs, { recursive: true });
     const title = raw.replace(/-md$/i, '').trim() || base;
     await fsp.writeFile(path.join(abs, 'index.md'), `# ${title}\n\n`, 'utf8');
@@ -205,11 +205,11 @@ export function createApp(root) {
 
   app.post('/api/folder', json, wrap(async (req, res) => {
     const name = slug(req.body?.name);
-    if (!name) return res.status(400).json({ error: 'Nombre inválido' });
+    if (!name) return res.status(400).json({ error: 'Invalid name' });
     const parentRel = String(req.body?.parent ?? '');
     const parentAbs = safeJoin(root, parentRel);
     const abs = path.join(parentAbs, name);
-    if (fs.existsSync(abs)) return res.status(409).json({ error: 'Ya existe una carpeta con ese nombre' });
+    if (fs.existsSync(abs)) return res.status(409).json({ error: 'A folder with that name already exists' });
     await fsp.mkdir(abs);
     // Una carpeta terminada en -md es una nota: le creamos su index.md
     if (name.endsWith('-md')) {
@@ -224,7 +224,7 @@ export function createApp(root) {
     const dirRel = String(req.query.dir ?? '');
     const dirAbs = safeJoin(root, dirRel);
     const stat = await fsp.stat(dirAbs);
-    if (!stat.isDirectory()) return res.status(400).json({ error: 'No es una carpeta' });
+    if (!stat.isDirectory()) return res.status(400).json({ error: 'Not a folder' });
     const entries = await fsp.readdir(dirAbs, { withFileTypes: true });
     const files = [];
     for (const entry of entries) {
@@ -249,7 +249,7 @@ export function createApp(root) {
     const dirAbs = safeJoin(root, dirRel);
     const rawName = String(req.query.name ?? req.headers['x-filename'] ?? 'file');
     const name = path.basename(rawName).replace(/[^\p{L}\p{N}._ -]/gu, '_');
-    if (!req.body?.length) return res.status(400).json({ error: 'Sin contenido' });
+    if (!req.body?.length) return res.status(400).json({ error: 'No content' });
     await fsp.mkdir(dirAbs, { recursive: true });
     await fsp.writeFile(path.join(dirAbs, name), req.body);
     const rel = dirRel ? `${dirRel}/${name}` : name;
@@ -258,9 +258,9 @@ export function createApp(root) {
 
   app.delete('/api/entry', wrap(async (req, res) => {
     const rel = String(req.query.path ?? '');
-    if (!rel) return res.status(400).json({ error: 'Falta la ruta' });
+    if (!rel) return res.status(400).json({ error: 'Missing path' });
     const abs = safeJoin(root, rel);
-    if (abs === root) return res.status(400).json({ error: 'No se puede borrar la carpeta raíz' });
+    if (abs === root) return res.status(400).json({ error: 'Cannot delete the root folder' });
     await fsp.rm(abs, { recursive: true });
     res.json({ ok: true });
   }));
@@ -268,10 +268,10 @@ export function createApp(root) {
   app.patch('/api/entry', json, wrap(async (req, res) => {
     const rel = String(req.body?.path ?? '').split('\\').join('/');
     const rawName = String(req.body?.name ?? '');
-    if (!rel) return res.status(400).json({ error: 'Falta la ruta' });
+    if (!rel) return res.status(400).json({ error: 'Missing path' });
     const abs = safeJoin(root, rel);
     const stat = await fsp.stat(abs).catch(() => null);
-    if (!stat) return res.status(404).json({ error: 'El elemento no existe' });
+    if (!stat) return res.status(404).json({ error: 'Item not found' });
     const parentRel = path.posix.dirname(rel);
     const parentAbs = safeJoin(root, parentRel === '.' ? '' : parentRel);
     const currentName = path.basename(abs);
@@ -280,13 +280,13 @@ export function createApp(root) {
     if (stat.isDirectory()) {
       // notas (carpetas *-md): se admite que el usuario escriba el nombre con .md o -md
       let base = slug(rawName.replace(/\.md$/i, '').replace(/-md$/i, ''));
-      if (!base) return res.status(400).json({ error: 'Nombre inválido' });
+      if (!base) return res.status(400).json({ error: 'Invalid name' });
       if (currentName.endsWith('-md')) base = `${base}-md`;
       newName = base;
     } else {
       const ext = path.extname(rel);
       const base = slug(rawName.replace(/\.[^.]+$/, ''));
-      if (!base) return res.status(400).json({ error: 'Nombre inválido' });
+      if (!base) return res.status(400).json({ error: 'Invalid name' });
       newName = `${base}${ext}`;
     }
 
@@ -295,7 +295,7 @@ export function createApp(root) {
     }
     const target = path.join(parentAbs, newName);
     if (fs.existsSync(target)) {
-      return res.status(409).json({ error: 'Ya existe un elemento con ese nombre' });
+      return res.status(409).json({ error: 'An item with that name already exists' });
     }
     await fsp.rename(abs, target);
     const newRel = parentRel === '.' ? newName : `${parentRel}/${newName}`;
@@ -306,16 +306,16 @@ export function createApp(root) {
     const rel = String(req.body?.path ?? '').split('\\').join('/');
     const format = String(req.body?.format ?? 'pdf');
     if (format !== 'pdf' && format !== 'docx') {
-      return res.status(400).json({ error: 'Formato no soportado' });
+      return res.status(400).json({ error: 'Unsupported format' });
     }
     const abs = safeJoin(root, rel);
     let stat;
     try {
       stat = await fsp.stat(abs);
     } catch {
-      return res.status(404).json({ error: 'El archivo no existe' });
+      return res.status(404).json({ error: 'File not found' });
     }
-    if (!stat.isFile()) return res.status(400).json({ error: 'No es un archivo' });
+    if (!stat.isFile()) return res.status(400).json({ error: 'Not a file' });
     const source = await fsp.readFile(abs, 'utf8');
     const dirName = path.posix.dirname(rel);
     const baseRel = dirName === '.' ? '' : dirName;
@@ -343,7 +343,7 @@ export function createApp(root) {
     if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
     const index = path.join(DIST_DIR, 'index.html');
     if (!fs.existsSync(index)) {
-      return res.status(500).send('Falta la build del frontend. Ejecuta: pnpm build');
+      return res.status(500).send('Frontend build missing. Run: pnpm build');
     }
     res.sendFile(index);
   });

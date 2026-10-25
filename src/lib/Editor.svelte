@@ -107,7 +107,7 @@
   <header class="toolbar">
     <button
       class="icon-btn"
-      title={sidebarOpen ? 'Ocultar notas (⌘B)' : 'Mostrar notas (⌘B)'}
+      title={sidebarOpen ? 'Hide notes (⌘B)' : 'Show notes (⌘B)'}
       onclick={() => onsidebar?.()}
     >
       <Icon name="panel" size={16} />
@@ -119,36 +119,36 @@
         <span class="crumb">{file.dir}</span>
       {/if}
       {#if dirty}
-        <span class="unsaved" title="Cambios sin guardar"></span>
+        <span class="unsaved" title="Unsaved changes"></span>
       {/if}
     </div>
     <div class="spacer"></div>
     {#if savedFlash}
-      <span class="autosaved">autoguardado</span>
+      <span class="autosaved">autosaved</span>
     {/if}
-    <span class="count">{words} palabras</span>
+    <span class="count">{words} words</span>
     <button
       class="icon-btn panel-btn"
       class:active={panelOpen}
-      title="Recursos de la nota"
+      title="Note resources"
       onclick={() => (panelOpen = !panelOpen)}
       disabled={!resourcesEnabled}
     >
       <Icon name="image" size={15} />
     </button>
     <div class="seg">
-      <button class:active={mode === 'edit'} onclick={() => (mode = 'edit')}>Edición</button>
+      <button class:active={mode === 'edit'} onclick={() => (mode = 'edit')}>Edit</button>
       <button class:active={mode === 'split'} onclick={() => (mode = 'split')}>Split</button>
-      <button class:active={mode === 'preview'} onclick={() => (mode = 'preview')}>Vista</button>
+      <button class:active={mode === 'preview'} onclick={() => (mode = 'preview')}>Preview</button>
     </div>
     <button class="save-btn" onclick={() => onsave?.()} disabled={!dirty}>
       <Icon name="save" size={14} />
-      Guardar
+      Save
     </button>
     <div class="export-wrap">
       <button class="save-btn" onclick={() => (exportOpen = !exportOpen)} disabled={!file?.text}>
         <Icon name="download" size={14} />
-        Exportar
+        Export
         <span class="export-chev" class:open={exportOpen}>
           <Icon name="chevron-down" size={12} />
         </span>
@@ -157,7 +157,7 @@
         <button
           class="menu-backdrop"
           tabindex="-1"
-          aria-label="Cerrar menú"
+          aria-label="Close menu"
           onclick={() => (exportOpen = false)}
         ></button>
         <div class="export-menu">
@@ -195,18 +195,18 @@
     {#if panelOpen}
       <aside class="resources" transition:slide={{ duration: 180, axis: 'x' }}>
         <div class="res-head">
-          <span>Recursos</span>
+          <span>Resources</span>
           <div class="res-actions">
-            <button class="icon-btn" title="Subir archivo" onclick={() => onpick?.()}>
+            <button class="icon-btn" title="Upload file" onclick={() => onpick?.()}>
               <Icon name="upload" size={14} />
             </button>
-            <button class="icon-btn" title="Cerrar panel" onclick={() => (panelOpen = false)}>
+            <button class="icon-btn" title="Close panel" onclick={() => (panelOpen = false)}>
               <Icon name="x" size={14} />
             </button>
           </div>
         </div>
         {#if resources.length === 0}
-          <p class="res-empty">Sin recursos en esta nota.<br />Sube imágenes con el botón de arriba.</p>
+          <p class="res-empty">No resources in this note yet.<br />Upload images with the button above.</p>
         {:else}
           <div class="res-scroll">
             <div class="res-grid">
@@ -218,7 +218,7 @@
                   onclick={() => insertResource(resource)}
                   onkeydown={(event) =>
                     (event.key === 'Enter' || event.key === ' ') && insertResource(resource)}
-                  title="Insertar en la nota"
+                  title="Insert into note"
                 >
                   {#if resource.type === 'image'}
                     <img src={resource.mediaUrl} alt={resource.name} loading="lazy" />
@@ -228,7 +228,7 @@
                   <span class="res-name">{resource.name}</span>
                   <button
                     class="res-remove"
-                    title="Eliminar recurso"
+                    title="Delete resource"
                     onclick={(event) => {
                       event.stopPropagation();
                       onremove?.(resource);
@@ -248,7 +248,7 @@
   <header class="toolbar">
     <button
       class="icon-btn"
-      title={sidebarOpen ? 'Ocultar notas (⌘B)' : 'Mostrar notas (⌘B)'}
+      title={sidebarOpen ? 'Hide notes (⌘B)' : 'Show notes (⌘B)'}
       onclick={() => onsidebar?.()}
     >
       <Icon name="panel" size={16} />

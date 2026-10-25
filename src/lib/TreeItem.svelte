@@ -101,10 +101,10 @@
       <span class="icon {iconClass}"><Icon name={iconName} size={15} /></span>
       <span class="label">{node.name}</span>
     </button>
-    <button class="del" title="Renombrar" onclick={startRenaming}>
+    <button class="del" title="Rename" onclick={startRenaming}>
       <Icon name="pencil" size={13} />
     </button>
-    <button class="del" title="Eliminar" onclick={() => ondelete?.(node)}>
+    <button class="del" title="Delete" onclick={() => ondelete?.(node)}>
       <Icon name="trash" size={13} />
     </button>
   </div>

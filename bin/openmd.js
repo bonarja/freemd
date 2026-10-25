@@ -17,18 +17,18 @@ const valueOf = (...flags) => {
 
 if (hasFlag('-h', '--help')) {
   console.log(`
-  freemd — editor de notas markdown en el navegador
+  freemd — markdown notes editor in your browser
 
-  Uso:
-    npx freemd [opciones]
+  Usage:
+    npx freemd [options]
 
-  Opciones:
-    -p, --port <n>     Puerto del servidor (por defecto 5813)
-    -d, --dir <ruta>   Carpeta de notas (por defecto ~/freemd)
-    -H, --host <addr>  Escuchar en otra interfaz; sin valor usa 0.0.0.0 (toda la red local)
-        --no-open      No abrir el navegador automáticamente
-    -v, --version      Mostrar versión
-    -h, --help         Mostrar esta ayuda
+  Options:
+    -p, --port <n>     Server port (default 5813)
+    -d, --dir <path>   Notes folder (default ~/freemd)
+    -H, --host <addr>  Listen on another interface; no value binds 0.0.0.0 (whole local network)
+        --no-open      Do not open the browser automatically
+    -v, --version      Print version
+    -h, --help         Show this help
 `);
   process.exit(0);
 }
@@ -45,7 +45,7 @@ if (portArg === undefined) {
 } else {
   port = Number(portArg);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    console.error(`Puerto inválido: ${portArg}`);
+    console.error(`Invalid port: ${portArg}`);
     process.exit(1);
   }
 }
@@ -63,18 +63,18 @@ try {
   const { url, root, migrated } = await start({ port, dir, host, open });
   console.log('');
   console.log(`  freemd ${pkg.version}`);
-  console.log(`  notas   ${root}`);
-  if (migrated) console.log(`  migrada ${migrated} → ${root}`);
-  console.log(`  listo   ${url}`);
+  console.log(`  notes   ${root}`);
+  if (migrated) console.log(`  migrated ${migrated} → ${root}`);
+  console.log(`  ready   ${url}`);
   if (host === '0.0.0.0' || host === '::') {
     for (const address of lanAddresses(port)) {
-      console.log(`  red     ${address}`);
+      console.log(`  network ${address}`);
     }
   }
   console.log('');
 } catch (error) {
   if (error.code === 'EADDRINUSE') {
-    console.error(`El puerto ${port} ya está en uso. Prueba con --port <otro puerto>`);
+    console.error(`Port ${port} is already in use. Try --port <another port>`);
   } else {
     console.error(error.message ?? error);
   }

@@ -44,15 +44,15 @@
   <div class="side-head">
     <span class="brand">free<span class="brand-md">md</span></span>
     <div class="head-actions">
-      <button class="icon-btn" title="Nueva nota" onclick={() => startCreating('note')}>
+      <button class="icon-btn" title="New note" onclick={() => startCreating('note')}>
         <Icon name="note" size={16} />
       </button>
-      <button class="icon-btn" title="Nueva carpeta" onclick={() => startCreating('folder')}>
+      <button class="icon-btn" title="New folder" onclick={() => startCreating('folder')}>
         <Icon name="folder" size={16} />
       </button>
       <button
         class="icon-btn"
-        title="Añadir recurso a la nota actual"
+        title="Add resource to current note"
         onclick={() => onpick?.()}
         disabled={uploadDir === null}
       >
@@ -66,7 +66,7 @@
       <input
         use:autofocus
         bind:value={name}
-        placeholder={creating.type === 'note' ? 'nombre de la nota' : 'nombre de la carpeta'}
+        placeholder={creating.type === 'note' ? 'note name' : 'folder name'}
         onkeydown={(event) => event.key === 'Escape' && cancelCreating()}
       />
     </form>
@@ -74,9 +74,9 @@
 
   <nav class="tree">
     {#if tree === null}
-      <p class="tree-loading">Cargando…</p>
+      <p class="tree-loading">Loading…</p>
     {:else if tree.length === 0}
-      <p class="tree-empty">Sin notas todavía.<br />Crea la primera con el botón de arriba.</p>
+      <p class="tree-empty">No notes yet.<br />Create your first one with the buttons above.</p>
     {:else}
       {#each tree as node (node.path)}
         <TreeItem {node} {current} depth={0} {onopen} {ondelete} {onrename} />
@@ -87,8 +87,8 @@
   <div class="side-foot">
     <button class="upload-btn" onclick={() => onpick?.()} disabled={uploadDir === null}>
       <Icon name="upload" size={14} />
-      Añadir recurso
+      Add resource
     </button>
-    <span class="root-hint" title="Carpeta de notas">{root}</span>
+    <span class="root-hint" title="Notes folder">{root}</span>
   </div>
 </aside>

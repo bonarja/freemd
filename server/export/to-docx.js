@@ -119,7 +119,7 @@ function pushImages(out, images, state) {
         new Paragraph({
           spacing: { before: 120, after: 160 },
           children: [
-            new TextRun({ text: `[imagen no soportada: ${alt}]`, italics: true, color: '808080' })
+            new TextRun({ text: `[unsupported image: ${alt}]`, italics: true, color: '808080' })
           ]
         })
       );
