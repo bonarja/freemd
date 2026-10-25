@@ -194,13 +194,24 @@ export function createApp(root) {
     if (!base) return res.status(400).json({ error: 'Invalid name' });
     base = base.replace(/-md$/, '');
     if (!base) return res.status(400).json({ error: 'Invalid name' });
+    // Las notas viven en carpetas propias: no se anidan dentro de otra nota.
+    const parentRel = String(req.body?.parent ?? '').split('\\').join('/').replace(/\/+$/, '');
+    const parentAbs = safeJoin(root, parentRel);
+    if (parentRel) {
+      const parentStat = await fsp.stat(parentAbs).catch(() => null);
+      if (!parentStat?.isDirectory()) return res.status(400).json({ error: 'Target folder not found' });
+      if (parentRel.split('/').pop().endsWith('-md')) {
+        return res.status(400).json({ error: 'Cannot create a note inside another note' });
+      }
+    }
     const folder = `${base}-md`;
-    const abs = path.join(root, folder);
+    const abs = path.join(parentAbs, folder);
     if (fs.existsSync(abs)) return res.status(409).json({ error: 'A note with that name already exists' });
     await fsp.mkdir(abs, { recursive: true });
     const title = raw.replace(/-md$/i, '').trim() || base;
     await fsp.writeFile(path.join(abs, 'index.md'), `# ${title}\n\n`, 'utf8');
-    res.status(201).json({ ok: true, path: `${folder}/index.md` });
+    const notePath = parentRel ? `${parentRel}/${folder}/index.md` : `${folder}/index.md`;
+    res.status(201).json({ ok: true, path: notePath });
   }));
 
   app.post('/api/folder', json, wrap(async (req, res) => {
@@ -254,6 +265,35 @@ export function createApp(root) {
     await fsp.writeFile(path.join(dirAbs, name), req.body);
     const rel = dirRel ? `${dirRel}/${name}` : name;
     res.status(201).json({ ok: true, path: rel, name });
+  }));
+
+  app.post('/api/move', json, wrap(async (req, res) => {
+    const from = String(req.body?.from ?? '').split('\\').join('/').replace(/\/+$/, '');
+    const to = String(req.body?.to ?? '').split('\\').join('/').replace(/\/+$/, '');
+    if (!from) return res.status(400).json({ error: 'Missing source path' });
+    const abs = safeJoin(root, from);
+    const stat = await fsp.stat(abs).catch(() => null);
+    if (!stat) return res.status(404).json({ error: 'Item not found' });
+
+    const toParentAbs = to ? safeJoin(root, to) : root;
+    // No mover una carpeta dentro de sí misma ni de sus descendientes
+    // (antes de validar la existencia del destino: el ciclo es el error real).
+    if (stat.isDirectory() && (to === from || to.startsWith(`${from}/`))) {
+      return res.status(400).json({ error: 'Cannot move a folder into itself' });
+    }
+    if (to) {
+      const toStat = await fsp.stat(toParentAbs).catch(() => null);
+      if (!toStat?.isDirectory()) return res.status(400).json({ error: 'Target folder not found' });
+    }
+
+    const name = path.basename(from);
+    const target = path.join(toParentAbs, name);
+    if (fs.existsSync(target)) {
+      return res.status(409).json({ error: 'An item with that name already exists in the target folder' });
+    }
+    await fsp.rename(abs, target);
+    const newRel = to ? `${to}/${name}` : name;
+    res.json({ ok: true, path: newRel });
   }));
 
   app.delete('/api/entry', wrap(async (req, res) => {

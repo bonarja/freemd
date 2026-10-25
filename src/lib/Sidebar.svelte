@@ -16,8 +16,23 @@
     ondelete,
     onrename,
     onactions,
-    onrenamehandled
+    onrenamehandled,
+    oncreatenotein,
+    onmove
   } = $props();
+
+  // La raíz del árbol también acepta drops (saca notas de las carpetas).
+  function rootDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }
+
+  function rootDrop(event) {
+    event.preventDefault();
+    const dragged = event.dataTransfer.getData('text/freemd-path');
+    if (!dragged || !dragged.includes('/')) return;
+    onmove?.(dragged, '');
+  }
 
   let creating = $state(null);
   let name = $state('');
@@ -87,7 +102,11 @@
     </form>
   {/if}
 
-  <nav class="tree">
+  <nav
+    class="tree"
+    ondragover={rootDragOver}
+    ondrop={rootDrop}
+  >
     {#if tree === null}
       <p class="tree-loading">Loading…</p>
     {:else if tree.length === 0}
@@ -105,6 +124,8 @@
           {onrename}
           {onactions}
           {onrenamehandled}
+          {oncreatenotein}
+          {onmove}
         />
       {/each}
     {/if}

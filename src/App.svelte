@@ -24,19 +24,48 @@
   let createRequest = $state(0);
   let nodeSheet = $state(null);
   let renameTarget = $state(null);
+  let folderPickerNode = $state(null);
 
   const nodeSheetActions = $derived.by(() => {
     if (!nodeSheet) return [];
     // Snapshot: onclose() pone nodeSheet en null ANTES de ejecutar la acción.
     const node = nodeSheet;
     const images = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'];
-    const icon =
-      node.type === 'note' ? 'note' : images.includes(node.ext) ? 'image' : 'file';
+    const icon = node.type === 'note' ? 'note' : images.includes(node.ext) ? 'image' : 'file';
     return [
       { label: 'Open', icon, onclick: () => openNode(node) },
       { label: 'Rename', icon: 'pencil', onclick: () => (renameTarget = node) },
+      { label: 'Move to…', icon: 'folder', onclick: () => (folderPickerNode = node) },
       { label: 'Delete', icon: 'trash', danger: true, onclick: () => handleDelete(node) }
     ];
+  });
+
+  function collectFolders(nodes, acc = []) {
+    for (const node of nodes) {
+      if (node.type === 'folder') {
+        acc.push(node);
+        collectFolders(node.children ?? [], acc);
+      }
+    }
+    return acc;
+  }
+
+  const folderPickerActions = $derived.by(() => {
+    if (!folderPickerNode) return [];
+    const node = folderPickerNode;
+    const from = node.dir ?? node.path;
+    const actions = [
+      { label: 'Notes root', icon: 'folder', onclick: () => handleMove(from, '') }
+    ];
+    for (const folder of collectFolders(tree ?? [])) {
+      if (folder.path === node.path || folder.path.startsWith(`${node.path}/`)) continue;
+      actions.push({
+        label: folder.path,
+        icon: 'folder',
+        onclick: () => handleMove(from, folder.path)
+      });
+    }
+    return actions;
   });
 
   const mobileQuery =
@@ -281,6 +310,35 @@
     };
   }
 
+  async function handleCreateNoteIn(folder, name) {
+    try {
+      const result = await api.createNote(name, folder.path);
+      await refresh();
+      await openNode({ path: result.path, type: 'file' }, { force: true });
+      notify('Note created');
+    } catch (error) {
+      notify(error.message, 'error');
+    }
+  }
+
+  async function handleMove(from, to) {
+    const fromParent = from.includes('/') ? from.split('/').slice(0, -1).join('/') : '';
+    if (fromParent === to) {
+      notify('Already in that folder');
+      return;
+    }
+    try {
+      const result = await api.moveEntry(from, to);
+      if (current && (current.path === from || current.path.startsWith(`${from}/`))) {
+        current = relabel(`${result.path}${current.path.slice(from.length)}`);
+      }
+      await refresh();
+      notify('Moved');
+    } catch (error) {
+      notify(error.message, 'error');
+    }
+  }
+
   async function handleRename(node, name) {
     const target = node.dir ?? node.path;
     try {
@@ -357,6 +415,8 @@
       onpick={pickUpload}
       ondelete={handleDelete}
       onrename={handleRename}
+      oncreatenotein={handleCreateNoteIn}
+      onmove={handleMove}
       onactions={(node) => (nodeSheet = node)}
       onrenamehandled={() => (renameTarget = null)}
     />
@@ -407,6 +467,13 @@
       title={nodeSheet.name}
       actions={nodeSheetActions}
       onclose={() => (nodeSheet = null)}
+    />
+  {/if}
+  {#if folderPickerNode}
+    <ActionSheet
+      title={`Move "${folderPickerNode.name}"`}
+      actions={folderPickerActions}
+      onclose={() => (folderPickerNode = null)}
     />
   {/if}
   <input type="file" hidden bind:this={fileInput} onchange={handleFileChange} />

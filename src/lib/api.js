@@ -24,7 +24,8 @@ export const readFile = (path) => request(`/api/file?path=${encodeURIComponent(p
 export const saveFile = (path, content) =>
   request('/api/file', { method: 'PUT', ...json({ path, content }) });
 
-export const createNote = (name) => request('/api/note', { method: 'POST', ...json({ name }) });
+export const createNote = (name, parent = '') =>
+  request('/api/note', { method: 'POST', ...json({ name, parent }) });
 
 export const createFolder = (parent, name) =>
   request('/api/folder', { method: 'POST', ...json({ parent, name }) });
@@ -34,6 +35,9 @@ export const removeEntry = (path) =>
 
 export const renameEntry = (path, name) =>
   request('/api/entry', { method: 'PATCH', ...json({ path, name }) });
+
+export const moveEntry = (from, to) =>
+  request('/api/move', { method: 'POST', ...json({ from, to }) });
 
 export const getResources = (dir) =>
   request(`/api/resources?dir=${encodeURIComponent(dir)}`);

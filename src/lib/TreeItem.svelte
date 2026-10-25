@@ -12,7 +12,9 @@
     ondelete,
     onrename,
     onactions,
-    onrenamehandled
+    onrenamehandled,
+    oncreatenotein,
+    onmove
   } = $props();
 
   const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif']);
@@ -20,6 +22,9 @@
   let toggled = $state(null);
   let renaming = $state(false);
   let draftName = $state('');
+  let creatingIn = $state(false);
+  let newName = $state('');
+  let dropActive = $state(false);
 
   const expanded = $derived(toggled ?? depth === 0);
   const isContainer = $derived(node.type === 'folder');
@@ -85,13 +90,100 @@
     if (value && value !== nameBase) await onrename?.(node, value);
   }
 
+  function startCreateIn() {
+    toggled = true;
+    newName = '';
+    creatingIn = true;
+  }
+
+  async function submitCreateIn(event) {
+    event.preventDefault();
+    const value = newName.trim();
+    creatingIn = false;
+    if (value) await oncreatenotein?.(node, value);
+  }
+
   function autofocus(input) {
     requestAnimationFrame(() => {
       input.focus();
       input.select();
     });
   }
+
+  // Drag & drop: arrastrar notas/archivos/carpetas hacia carpetas o a la raíz.
+  // Para notas se arrastra la CARPETA completa (node.dir), nunca el index.md.
+  function dragStart(event) {
+    event.dataTransfer.setData('text/freemd-path', node.dir ?? node.path);
+    event.dataTransfer.effectAllowed = 'move';
+  }
+
+  function dragOver(event) {
+    if (!isContainer) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    dropActive = true;
+  }
+
+  function dragLeave() {
+    dropActive = false;
+  }
+
+  function drop(event) {
+    dropActive = false;
+    if (!isContainer) return;
+    event.preventDefault();
+    const dragged = event.dataTransfer.getData('text/freemd-path');
+    if (!dragged || dragged === node.path || dragged.startsWith(`${node.path}/`)) return;
+    onmove?.(dragged, node.path);
+  }
 </script>
+
+<div class="item" class:active>
+  <button
+    class="row"
+    class:drag-over={dropActive}
+    style:padding-left={`${depth * 14 + 8}px`}
+    draggable={!isMobile}
+    ondragstart={dragStart}
+    ondragover={dragOver}
+    ondragleave={dragLeave}
+    ondrop={drop}
+    onclick={handleClick}
+    title={node.name}
+  >
+    {#if isContainer}
+      <span class="chev" class:open={expanded}>
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </span>
+    {:else}
+      <span class="chev"></span>
+    {/if}
+    <span class="icon {iconClass}"><Icon name={iconName} size={15} /></span>
+    <span class="label">{node.name}</span>
+  </button>
+  {#if isContainer}
+    <button class="del add-note" title="New note inside" onclick={startCreateIn}>
+      <Icon name="note-plus" size={13} />
+    </button>
+  {/if}
+  <button class="del" title="Rename" onclick={startRenaming}>
+    <Icon name="pencil" size={13} />
+  </button>
+  <button class="del" title="Delete" onclick={() => ondelete?.(node)}>
+    <Icon name="trash" size={13} />
+  </button>
+</div>
 
 {#if renaming}
   <form class="rename-item" style:padding-left={`${depth * 14 + 4}px`} onsubmit={submitRename}>
@@ -102,40 +194,24 @@
       onblur={() => (renaming = false)}
     />
   </form>
-{:else}
-  <div class="item" class:active>
-    <button class="row" style:padding-left={`${depth * 14 + 8}px`} onclick={handleClick} title={node.name}>
-      {#if isContainer}
-        <span class="chev" class:open={expanded}>
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </span>
-      {:else}
-        <span class="chev"></span>
-      {/if}
-      <span class="icon {iconClass}"><Icon name={iconName} size={15} /></span>
-      <span class="label">{node.name}</span>
-    </button>
-    <button class="del" title="Rename" onclick={startRenaming}>
-      <Icon name="pencil" size={13} />
-    </button>
-    <button class="del" title="Delete" onclick={() => ondelete?.(node)}>
-      <Icon name="trash" size={13} />
-    </button>
-  </div>
 {/if}
 
 {#if isContainer && expanded}
+  {#if creatingIn}
+    <form
+      class="new-item"
+      style:padding-left={`${(depth + 1) * 14 + 8}px`}
+      onsubmit={submitCreateIn}
+    >
+      <input
+        use:autofocus
+        bind:value={newName}
+        placeholder="note name"
+        onkeydown={(event) => event.key === 'Escape' && (creatingIn = false)}
+        onblur={() => (creatingIn = false)}
+      />
+    </form>
+  {/if}
   {#each node.children ?? [] as child (child.path)}
     <TreeItem
       node={child}
@@ -148,6 +224,8 @@
       {onrename}
       {onactions}
       {onrenamehandled}
+      {oncreatenotein}
+      {onmove}
     />
   {/each}
 {/if}

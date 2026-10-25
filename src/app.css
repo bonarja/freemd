@@ -838,6 +838,12 @@ textarea.code.half {
   left: 10px;
 }
 
+.row.drag-over {
+  background: var(--bg-hover);
+  outline: 1px dashed var(--blue);
+  outline-offset: -1px;
+}
+
 .btn-label {
   display: inline;
 }
@@ -1031,10 +1037,15 @@ textarea.code.half {
     display: none;
   }
 
-  /* Los botones hover del árbol y del panel no existen en touch: hay action sheets */
+  /* Los botones hover del árbol y del panel no existen en touch: hay action sheets.
+     Excepción: el "+" de crear nota dentro de carpeta, siempre visible. */
   .item .del,
   .res-remove {
     display: none;
+  }
+
+  .item .del.add-note {
+    display: flex;
   }
 
   /* Action sheet */
