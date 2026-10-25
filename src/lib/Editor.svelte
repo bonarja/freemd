@@ -1,6 +1,6 @@
 <script>
   import { tick } from 'svelte';
-  import { slide } from 'svelte/transition';
+  import { fly, slide } from 'svelte/transition';
   import Icon from './Icon.svelte';
   import { render } from './markdown.js';
 
@@ -82,6 +82,11 @@
 
   // Pega imágenes del portapapeles: las sube como recursos y las inserta.
   // Con texto en el portapapeles se deja el comportamiento por defecto.
+  // El panel de recursos entra desde abajo en móvil y desde la derecha en desktop.
+  function panelTransition(node) {
+    return isMobile ? fly(node, { y: 560, duration: 240 }) : slide(node, { duration: 180, axis: 'x' });
+  }
+
   // En móvil el modo Split no existe: si se llega con split activo, se vuelve a Edit.
   $effect(() => {
     if (isMobile && mode === 'split') mode = 'edit';
@@ -215,7 +220,7 @@
       ></button>
     {/if}
     {#if panelOpen}
-      <aside class="resources" transition:slide={{ duration: 180, axis: 'x' }}>
+      <aside class="resources" transition:panelTransition>
         <div class="res-head">
           <span>Resources</span>
           <div class="res-actions">
