@@ -2,6 +2,7 @@
   import Sidebar from './lib/Sidebar.svelte';
   import Editor from './lib/Editor.svelte';
   import Icon from './lib/Icon.svelte';
+  import ActionSheet from './lib/ActionSheet.svelte';
   import * as api from './lib/api.js';
 
   let tree = $state(null);
@@ -21,6 +22,22 @@
   let flashTimer;
   let fileInput = $state(null);
   let createRequest = $state(0);
+  let nodeSheet = $state(null);
+  let renameTarget = $state(null);
+
+  const nodeSheetActions = $derived.by(() => {
+    if (!nodeSheet) return [];
+    // Snapshot: onclose() pone nodeSheet en null ANTES de ejecutar la acción.
+    const node = nodeSheet;
+    const images = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'avif'];
+    const icon =
+      node.type === 'note' ? 'note' : images.includes(node.ext) ? 'image' : 'file';
+    return [
+      { label: 'Open', icon, onclick: () => openNode(node) },
+      { label: 'Rename', icon: 'pencil', onclick: () => (renameTarget = node) },
+      { label: 'Delete', icon: 'trash', danger: true, onclick: () => handleDelete(node) }
+    ];
+  });
 
   const mobileQuery =
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)') : null;
@@ -333,11 +350,15 @@
       {root}
       {uploadDir}
       {createRequest}
+      {isMobile}
+      {renameTarget}
       onopen={openNode}
       oncreate={handleCreate}
       onpick={pickUpload}
       ondelete={handleDelete}
       onrename={handleRename}
+      onactions={(node) => (nodeSheet = node)}
+      onrenamehandled={() => (renameTarget = null)}
     />
   </div>
   <main class="main">
@@ -380,6 +401,13 @@
   </main>
   {#if toast}
     <div class="toast {toast.kind}">{toast.message}</div>
+  {/if}
+  {#if nodeSheet}
+    <ActionSheet
+      title={nodeSheet.name}
+      actions={nodeSheetActions}
+      onclose={() => (nodeSheet = null)}
+    />
   {/if}
   <input type="file" hidden bind:this={fileInput} onchange={handleFileChange} />
 </div>

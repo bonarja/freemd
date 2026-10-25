@@ -2,7 +2,18 @@
   import TreeItem from './TreeItem.svelte';
   import Icon from './Icon.svelte';
 
-  let { node, current, depth = 0, onopen, ondelete, onrename } = $props();
+  let {
+    node,
+    current,
+    depth = 0,
+    isMobile = false,
+    renameTarget = null,
+    onopen,
+    ondelete,
+    onrename,
+    onactions,
+    onrenamehandled
+  } = $props();
 
   const IMAGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'avif']);
 
@@ -40,13 +51,27 @@
         : node.name.replace(/\.[^.]+$/, '')
   );
 
+  // En móvil tocar una nota/archivo abre el action sheet (abrir/renombrar/eliminar);
+  // las carpetas siguen expandiéndose con el tap directo.
   function handleClick() {
+    if (isMobile && !isContainer) {
+      onactions?.(node);
+      return;
+    }
     if (!isContainer) {
       onopen?.(node);
       return;
     }
     toggled = !expanded;
   }
+
+  // El action sheet pide renombrar esta entrada: abre el input en línea.
+  $effect(() => {
+    if (renameTarget && renameTarget.path === node.path) {
+      startRenaming();
+      onrenamehandled?.();
+    }
+  });
 
   function startRenaming() {
     draftName = nameBase;
@@ -79,7 +104,7 @@
   </form>
 {:else}
   <div class="item" class:active>
-    <button class="row" style:padding-left={`${depth * 14 + 8}px`} onclick={handleClick} title={node.path}>
+    <button class="row" style:padding-left={`${depth * 14 + 8}px`} onclick={handleClick} title={node.name}>
       {#if isContainer}
         <span class="chev" class:open={expanded}>
           <svg
@@ -112,6 +137,17 @@
 
 {#if isContainer && expanded}
   {#each node.children ?? [] as child (child.path)}
-    <TreeItem node={child} {current} depth={depth + 1} {onopen} {ondelete} {onrename} />
+    <TreeItem
+      node={child}
+      {current}
+      depth={depth + 1}
+      {isMobile}
+      {renameTarget}
+      {onopen}
+      {ondelete}
+      {onrename}
+      {onactions}
+      {onrenamehandled}
+    />
   {/each}
 {/if}

@@ -2,7 +2,22 @@
   import TreeItem from './TreeItem.svelte';
   import Icon from './Icon.svelte';
 
-  let { tree, current, root, uploadDir, createRequest = 0, onopen, oncreate, onpick, ondelete, onrename } = $props();
+  let {
+    tree,
+    current,
+    root,
+    uploadDir,
+    createRequest = 0,
+    isMobile = false,
+    renameTarget = null,
+    onopen,
+    oncreate,
+    onpick,
+    ondelete,
+    onrename,
+    onactions,
+    onrenamehandled
+  } = $props();
 
   let creating = $state(null);
   let name = $state('');
@@ -79,7 +94,18 @@
       <p class="tree-empty">No notes yet.<br />Create your first one with the buttons above.</p>
     {:else}
       {#each tree as node (node.path)}
-        <TreeItem {node} {current} depth={0} {onopen} {ondelete} {onrename} />
+        <TreeItem
+          {node}
+          {current}
+          depth={0}
+          {isMobile}
+          {renameTarget}
+          {onopen}
+          {ondelete}
+          {onrename}
+          {onactions}
+          {onrenamehandled}
+        />
       {/each}
     {/if}
   </nav>

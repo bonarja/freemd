@@ -2,6 +2,7 @@
   import { tick } from 'svelte';
   import { fly, slide } from 'svelte/transition';
   import Icon from './Icon.svelte';
+  import ActionSheet from './ActionSheet.svelte';
   import { render } from './markdown.js';
 
   let {
@@ -26,12 +27,44 @@
   let textareaEl = $state(null);
   let previewEl = $state(null);
   let exportOpen = $state(false);
+  let resourceSheet = $state(null);
 
   const base = $derived(file?.path ? file.path.split('/').slice(0, -1).join('/') : '');
   const html = $derived(file?.text ? render(content, base) : '');
   const words = $derived(
     file?.text ? (content.trim() ? content.trim().split(/\s+/).length : 0) : 0
   );
+
+  // En móvil tocar un recurso abre el action sheet (insertar/eliminar).
+  function chooseResource(resource) {
+    if (isMobile) {
+      resourceSheet = resource;
+      return;
+    }
+    insertResource(resource);
+  }
+
+  const resourceSheetActions = $derived.by(() => {
+    if (!resourceSheet) return [];
+    // Snapshot: onclose() pone resourceSheet en null ANTES de ejecutar la acción.
+    const resource = resourceSheet;
+    return [
+      {
+        label: 'Insert into note',
+        icon: resource.type === 'image' ? 'image' : 'file',
+        onclick: () => {
+          insertResource(resource);
+          if (isMobile) panelOpen = false;
+        }
+      },
+      {
+        label: 'Delete resource',
+        icon: 'trash',
+        danger: true,
+        onclick: () => onremove?.(resource)
+      }
+    ];
+  });
 
   async function insertResource(resource) {
     const name = resource.name ?? 'imagen';
@@ -242,9 +275,9 @@
                   class="res-item"
                   role="button"
                   tabindex="0"
-                  onclick={() => insertResource(resource)}
+                  onclick={() => chooseResource(resource)}
                   onkeydown={(event) =>
-                    (event.key === 'Enter' || event.key === ' ') && insertResource(resource)}
+                    (event.key === 'Enter' || event.key === ' ') && chooseResource(resource)}
                   title="Insert into note"
                 >
                   {#if resource.type === 'image'}
@@ -271,6 +304,13 @@
       </aside>
     {/if}
   </div>
+  {#if resourceSheet}
+    <ActionSheet
+      title={resourceSheet.name}
+      actions={resourceSheetActions}
+      onclose={() => (resourceSheet = null)}
+    />
+  {/if}
 {:else if file}
   <header class="toolbar">
     <button
