@@ -1,6 +1,6 @@
 {
   "name": "freemd",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Local markdown notes editor in your browser and export. Run with npx freemd",
   "license": "MIT",
   "type": "module",
