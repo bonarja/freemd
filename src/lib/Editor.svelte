@@ -15,6 +15,7 @@
     panelOpen = $bindable(false),
     sidebarOpen = true,
     onsidebar,
+    isMobile = false,
     onsave,
     onpick,
     onexport,
@@ -81,6 +82,11 @@
 
   // Pega imágenes del portapapeles: las sube como recursos y las inserta.
   // Con texto en el portapapeles se deja el comportamiento por defecto.
+  // En móvil el modo Split no existe: si se llega con split activo, se vuelve a Edit.
+  $effect(() => {
+    if (isMobile && mode === 'split') mode = 'edit';
+  });
+
   async function handlePaste(event) {
     if (!file?.text || !resourcesEnabled) return;
     const clipboard = event.clipboardData;
@@ -131,6 +137,7 @@
       class="icon-btn panel-btn"
       class:active={panelOpen}
       title="Note resources"
+      aria-label="Toggle resources panel"
       onclick={() => (panelOpen = !panelOpen)}
       disabled={!resourcesEnabled}
     >
@@ -138,17 +145,24 @@
     </button>
     <div class="seg">
       <button class:active={mode === 'edit'} onclick={() => (mode = 'edit')}>Edit</button>
-      <button class:active={mode === 'split'} onclick={() => (mode = 'split')}>Split</button>
+      <button class="split-btn" class:active={mode === 'split'} onclick={() => (mode = 'split')}>
+        Split
+      </button>
       <button class:active={mode === 'preview'} onclick={() => (mode = 'preview')}>Preview</button>
     </div>
-    <button class="save-btn" onclick={() => onsave?.()} disabled={!dirty}>
+    <button class="save-btn" onclick={() => onsave?.()} disabled={!dirty} aria-label="Save">
       <Icon name="save" size={14} />
-      Save
+      <span class="btn-label">Save</span>
     </button>
     <div class="export-wrap">
-      <button class="save-btn" onclick={() => (exportOpen = !exportOpen)} disabled={!file?.text}>
+      <button
+        class="save-btn"
+        onclick={() => (exportOpen = !exportOpen)}
+        disabled={!file?.text}
+        aria-label="Export"
+      >
         <Icon name="download" size={14} />
-        Export
+        <span class="btn-label">Export</span>
         <span class="export-chev" class:open={exportOpen}>
           <Icon name="chevron-down" size={12} />
         </span>
@@ -173,7 +187,7 @@
       {/if}
     </div>
   </header>
-  <div class="editor-body">
+  <div class="editor-body" class:split={mode === 'split'}>
     {#if mode !== 'preview'}
       <textarea
         class="code"
@@ -191,6 +205,14 @@
           {@html html}
         </article>
       </div>
+    {/if}
+    {#if panelOpen && isMobile}
+      <button
+        class="panel-backdrop"
+        aria-label="Close resources panel"
+        tabindex="-1"
+        onclick={() => (panelOpen = false)}
+      ></button>
     {/if}
     {#if panelOpen}
       <aside class="resources" transition:slide={{ duration: 180, axis: 'x' }}>

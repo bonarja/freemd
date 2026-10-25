@@ -21,19 +21,40 @@
   let flashTimer;
   let fileInput = $state(null);
   let createRequest = $state(0);
+
+  const mobileQuery =
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)') : null;
+  let isMobile = $state(mobileQuery?.matches ?? false);
+
+  $effect(() => {
+    if (!mobileQuery) return;
+    const update = () => (isMobile = mobileQuery.matches);
+    update();
+    mobileQuery.addEventListener('change', update);
+    return () => mobileQuery.removeEventListener('change', update);
+  });
+
+  // En móvil el drawer arranca cerrado y no se persiste; en desktop se respeta
+  // lo guardado (clave v2: la v1 quedó contaminada con estados de móvil).
   let sidebarOpen = $state(
-    typeof localStorage === 'undefined' ? true : localStorage.getItem('freemd:sidebar') !== '0'
+    !mobileQuery?.matches && localStorage.getItem('freemd:sidebar:v2') !== '0'
   );
 
   $effect(() => {
-    localStorage.setItem('freemd:sidebar', sidebarOpen ? '1' : '0');
+    if (isMobile) return;
+    localStorage.setItem('freemd:sidebar:v2', sidebarOpen ? '1' : '0');
   });
+
+  // Sin nota seleccionada en desktop el sidebar siempre está abierto,
+  // sin importar el valor persistido del toggle.
+  const sidebarVisible = $derived(current === null && !isMobile ? true : sidebarOpen);
 
   function toggleSidebar() {
     sidebarOpen = !sidebarOpen;
   }
 
   function requestNewNote() {
+    if (!sidebarVisible) sidebarOpen = true; // el formulario vive en el sidebar
     createRequest++;
   }
 
@@ -93,6 +114,7 @@
       saved = content;
       mode = 'edit';
       await loadResources();
+      if (isMobile) sidebarOpen = false; // seleccionar nota cierra el drawer
     } catch (error) {
       notify(error.message, 'error');
     }
@@ -296,7 +318,15 @@
 <svelte:window onkeydown={handleKeydown} onbeforeunload={handleBeforeUnload} />
 
 <div class="app">
-  <div class="sidebar-slot" class:collapsed={!sidebarOpen}>
+  {#if sidebarVisible && isMobile}
+    <button
+      class="drawer-backdrop"
+      aria-label="Close sidebar"
+      tabindex="-1"
+      onclick={toggleSidebar}
+    ></button>
+  {/if}
+  <div class="sidebar-slot" class:collapsed={!sidebarVisible}>
     <Sidebar
       {tree}
       {current}
@@ -321,8 +351,9 @@
         {resources}
         resourcesEnabled={uploadDir !== null}
         bind:panelOpen
-        {sidebarOpen}
+        {sidebarVisible}
         onsidebar={toggleSidebar}
+        {isMobile}
         onsave={() => save()}
         onpick={pickUpload}
         onexport={handleExport}
@@ -331,8 +362,8 @@
       />
     {:else}
       <div class="empty">
-        {#if !sidebarOpen}
-          <button class="icon-btn sidebar-open" title="Show notes (⌘B)" onclick={toggleSidebar}>
+        {#if !sidebarVisible && isMobile}
+          <button class="icon-btn sidebar-open" title="Show notes" onclick={toggleSidebar}>
             <Icon name="panel" size={16} />
           </button>
         {/if}

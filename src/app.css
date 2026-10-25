@@ -30,6 +30,15 @@ body,
   margin: 0;
 }
 
+/* Altura real en navegadores móviles (evita el salto de la barra de URL) */
+@supports (height: 100dvh) {
+  html,
+  body,
+  #app {
+    height: 100dvh;
+  }
+}
+
 body {
   background: var(--bg);
   color: var(--fg);
@@ -374,6 +383,8 @@ button {
   font-weight: 500;
   color: var(--fg-bright);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta .crumb {
@@ -827,6 +838,10 @@ textarea.code.half {
   left: 10px;
 }
 
+.btn-label {
+  display: inline;
+}
+
 .primary-btn {
   display: flex;
   align-items: center;
@@ -883,5 +898,141 @@ textarea.code.half {
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ---------- Mobile / pantallas estrechas ---------- */
+@media (max-width: 768px) {
+  /* Sidebar: drawer fijo que entra desde la izquierda */
+  .sidebar-slot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 82vw);
+    min-width: 0;
+    z-index: 60;
+    transform: translateX(-105%);
+    transition: transform 0.2s ease;
+  }
+
+  .sidebar-slot:not(.collapsed) {
+    transform: translateX(0);
+  }
+
+  .drawer-backdrop,
+  .panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: default;
+  }
+
+  /* El panel de recursos debe quedar POR ENCIMA de su backdrop (55) */
+  .panel-backdrop {
+    z-index: 49;
+  }
+
+  .side-foot {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .new-item input,
+  .rename-item input {
+    font-size: 16px; /* evita el auto-zoom de iOS */
+  }
+
+  /* Toolbar compacta */
+  .toolbar {
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  /* Un solo elemento flexible: el nombre (el spacer se lo repartía a la mitad) */
+  .spacer {
+    display: none;
+  }
+
+  .meta {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .meta .icon {
+    display: none;
+  }
+
+  .meta .crumb,
+  .count,
+  .export-chev,
+  .btn-label {
+    display: none;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .seg button {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .save-btn {
+    padding: 7px 9px;
+  }
+
+  /* Editor */
+  .editor-body {
+    position: relative;
+  }
+
+  textarea.code {
+    padding: 16px;
+    font-size: 16px; /* evita el auto-zoom de iOS */
+  }
+
+  textarea.code.half {
+    padding: 16px;
+  }
+
+  /* Sin modo Split en móvil */
+  .seg .split-btn {
+    display: none;
+  }
+
+  .preview,
+  .preview-wrap.half .preview {
+    padding: 20px 16px 60px;
+  }
+
+  /* Panel de recursos: overlay desde la derecha */
+  .resources {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(280px, 85vw);
+    z-index: 50;
+  }
+
+  .media-view {
+    padding: 16px;
+  }
+
+  .toast {
+    max-width: calc(100vw - 32px);
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    font-size: 12.5px;
+    text-align: center;
+  }
+
+  .empty {
+    padding: 20px;
+    text-align: center;
   }
 }
