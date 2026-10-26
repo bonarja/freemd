@@ -4,6 +4,13 @@
   import Icon from './Icon.svelte';
   import ActionSheet from './ActionSheet.svelte';
   import { render } from './markdown.js';
+  import hljs from 'highlight.js/lib/core';
+  import markdownLang from 'highlight.js/lib/languages/markdown';
+  import xmlLang from 'highlight.js/lib/languages/xml';
+
+  // El grammar de markdown usa xml como sublenguaje (HTML embebido).
+  hljs.registerLanguage('markdown', markdownLang);
+  hljs.registerLanguage('xml', xmlLang);
 
   let {
     file,
@@ -25,15 +32,50 @@
   } = $props();
 
   let textareaEl = $state(null);
+  let hlEl = $state(null);
   let previewEl = $state(null);
   let exportOpen = $state(false);
   let resourceSheet = $state(null);
+
+  // Corrector ortográfico del navegador, opt-in y persistido.
+  let spellcheck = $state(localStorage.getItem('freemd:spellcheck:v1') === '1');
+
+  $effect(() => {
+    localStorage.setItem('freemd:spellcheck:v1', spellcheck ? '1' : '0');
+  });
 
   const base = $derived(file?.path ? file.path.split('/').slice(0, -1).join('/') : '');
   const html = $derived(file?.text ? render(content, base) : '');
   const words = $derived(
     file?.text ? (content.trim() ? content.trim().split(/\s+/).length : 0) : 0
   );
+
+  // Notas enormes: se muestran sin color antes que congelar la edición.
+  const HIGHLIGHT_LIMIT = 120_000;
+
+  function escapeHtml(text) {
+    return text.replace(
+      /[&<>]/g,
+      (ch) => (ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : '&gt;')
+    );
+  }
+
+  // El textarea vive con el texto transparente sobre este <pre> resaltado.
+  const highlighted = $derived.by(() => {
+    if (!file?.text) return '';
+    let out;
+    try {
+      out =
+        content.length <= HIGHLIGHT_LIMIT
+          ? hljs.highlight(content, { language: 'markdown' }).value
+          : escapeHtml(content);
+    } catch {
+      out = escapeHtml(content);
+    }
+    // Cuando el valor acaba en \n, el textarea pinta una última línea vacía
+    // que el <pre> colapsa: el salto extra iguala la altura de ambas capas.
+    return out + '\n';
+  });
 
   // En móvil tocar un recurso abre el action sheet (insertar/eliminar).
   function chooseResource(resource) {
@@ -104,10 +146,14 @@
     el.setSelectionRange(start + 2, start + 2);
   }
 
-  // Sincroniza el scroll del preview con el del editor (modo split).
+  // Sincroniza el scroll de la capa de highlight y, en split, el del preview.
   function syncScroll(event) {
-    if (mode !== 'split' || !previewEl) return;
     const el = event.currentTarget;
+    if (hlEl) {
+      hlEl.scrollTop = el.scrollTop;
+      hlEl.scrollLeft = el.scrollLeft;
+    }
+    if (mode !== 'split' || !previewEl) return;
     const range = Math.max(1, el.scrollHeight - el.clientHeight);
     const ratio = el.scrollTop / range;
     previewEl.scrollTop = ratio * Math.max(0, previewEl.scrollHeight - previewEl.clientHeight);
@@ -181,6 +227,16 @@
     >
       <Icon name="image" size={15} />
     </button>
+    <button
+      class="icon-btn spell-btn"
+      class:active={spellcheck}
+      title={spellcheck ? 'Spell check: on' : 'Spell check: off'}
+      aria-label="Toggle spell check"
+      aria-pressed={spellcheck}
+      onclick={() => (spellcheck = !spellcheck)}
+    >
+      <Icon name="spell-check" size={15} />
+    </button>
     <div class="seg">
       <button class:active={mode === 'edit'} onclick={() => (mode = 'edit')}>Edit</button>
       <button class="split-btn" class:active={mode === 'split'} onclick={() => (mode = 'split')}>
@@ -227,15 +283,17 @@
   </header>
   <div class="editor-body" class:split={mode === 'split'}>
     {#if mode !== 'preview'}
-      <textarea
-        class="code"
-        class:half={mode === 'split'}
-        bind:this={textareaEl}
-        bind:value={content}
-        onkeydown={handleTab}
-        onscroll={syncScroll}
-        spellcheck="false"
-      ></textarea>
+      <div class="code-shell" class:half={mode === 'split'}>
+        <pre class="hl-layer" aria-hidden="true" bind:this={hlEl}>{@html highlighted}</pre>
+        <textarea
+          class="code"
+          bind:this={textareaEl}
+          bind:value={content}
+          onkeydown={handleTab}
+          onscroll={syncScroll}
+          spellcheck={spellcheck}
+        ></textarea>
+      </div>
     {/if}
     {#if mode !== 'edit'}
       <div class="preview-wrap" class:half={mode === 'split'} bind:this={previewEl}>

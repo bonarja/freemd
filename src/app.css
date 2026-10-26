@@ -537,6 +537,11 @@ button {
   background: var(--bg-panel);
 }
 
+.spell-btn.active {
+  color: var(--blue);
+  background: var(--bg-panel);
+}
+
 .resources {
   width: 240px;
   flex-shrink: 0;
@@ -659,27 +664,69 @@ button {
   white-space: nowrap;
 }
 
-textarea.code {
+/* El textarea vive dentro de .code-shell, superpuesto a la capa de highlight */
+.code-shell {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  background: var(--bg);
+}
+
+.code-shell.half {
+  flex: 1 1 50%;
+  border-right: 1px solid var(--border-dark);
+}
+
+textarea.code {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: 100%;
   padding: 24px 32px;
   border: none;
   outline: none;
   resize: none;
-  background: var(--bg);
+  /* Texto invisible: los glifos los pinta .hl-layer debajo; quedan el caret,
+     la selección y las ondulaciones del corrector. */
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: var(--blue);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.75;
+  word-break: normal;
+  overflow-wrap: break-word;
+  /* Reserva el mismo ancho de scrollbar en ambas capas aunque solo el
+     textarea haga scroll (evita desalineaciones con scrollbars clásicas). */
+  scrollbar-gutter: stable;
+  z-index: 1;
+}
+
+/* Capa de highlight: métricas idénticas al textarea (fuente, padding, wrap).
+   Los colores de token vienen del tema atom-one-dark importado en markdown.js. */
+.hl-layer {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  padding: 24px 32px;
+  background: transparent;
   color: var(--fg);
   font-family: var(--mono);
   font-size: 14px;
   line-height: 1.75;
-  caret-color: var(--blue);
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: break-word;
+  scrollbar-gutter: stable;
+  pointer-events: none;
+  user-select: none;
 }
 
-textarea.code.half {
-  flex: 1 1 50%;
-  width: auto;
-  min-width: 0;
+.code-shell.half textarea.code,
+.code-shell.half .hl-layer {
   padding: 20px 24px;
-  border-right: 1px solid var(--border-dark);
 }
 
 .preview-wrap.half {
@@ -1023,13 +1070,10 @@ textarea.code.half {
     position: relative;
   }
 
-  textarea.code {
+  textarea.code,
+  .hl-layer {
     padding: 16px;
     font-size: 16px; /* evita el auto-zoom de iOS */
-  }
-
-  textarea.code.half {
-    padding: 16px;
   }
 
   /* Sin modo Split en móvil */
