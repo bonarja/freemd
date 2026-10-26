@@ -10,6 +10,13 @@ npx freemd
 
 Eso es todo: crea `~/freemd` si no existe, levanta un servidor local en [http://localhost:5813](http://localhost:5813) y abre tu navegador.
 
+¿Prefieres una instalación permanente? `npm install -g freemd` — a partir de ahí el comando es simplemente `freemd` (mismas opciones y subcomandos que en todos los ejemplos con `npx freemd` de abajo):
+
+```bash
+npm install -g freemd
+freemd
+```
+
 <img src="https://raw.githubusercontent.com/bonarja/freemd/main/doc/img1.jpg" alt="img1" width="800">
 
 ## Por qué freemd
@@ -27,7 +34,7 @@ Node.js 18 o superior. Nada más.
 ## Uso
 
 ```bash
-npx freemd [opciones]
+npx freemd [opciones]     # o `freemd [opciones]` con la instalación global
 ```
 
 | Opción | Descripción |

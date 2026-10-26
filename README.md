@@ -10,6 +10,13 @@ npx freemd
 
 That's it: it creates `~/freemd` if it doesn't exist, starts a local server at [http://localhost:5813](http://localhost:5813) and opens your browser.
 
+Prefer a permanent install? `npm install -g freemd` — from then on the command is just `freemd` (same options and subcommands as every `npx freemd` example below):
+
+```bash
+npm install -g freemd
+freemd
+```
+
 <img src="https://raw.githubusercontent.com/bonarja/freemd/main/doc/img1.jpg" alt="img1" width="800">
 
 ## Why freemd
@@ -27,7 +34,7 @@ Node.js 18 or newer. That's all.
 ## Usage
 
 ```bash
-npx freemd [options]
+npx freemd [options]      # or `freemd [options]` with the global install
 ```
 
 | Option | Description |
