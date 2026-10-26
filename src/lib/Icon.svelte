@@ -63,5 +63,16 @@
     <path d="m6 16 5-11 5 11" />
     <path d="m8 12h6" />
     <path d="m16 20 2 2 4-4" />
+  {:else if name === 'check'}
+    <path d="M20 6 9 17l-5-5" />
+  {:else if name === 'plus'}
+    <path d="M12 5v14" />
+    <path d="M5 12h14" />
+  {:else if name === 'arrow-down'}
+    <path d="M12 5v14" />
+    <path d="m19 12-7 7-7-7" />
+  {:else if name === 'arrow-up'}
+    <path d="M12 19V5" />
+    <path d="m5 12 7-7 7 7" />
   {/if}
 </svg>

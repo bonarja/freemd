@@ -66,37 +66,64 @@ function fileLabels(rel) {
   };
 }
 
+// Fechas (ms) de un nodo: mtime para «Updated», birthtime para «Created»
+// (birthtime puede ser 0 en sistemas sin soporte; caemos a ctime).
+async function statTimes(abs) {
+  try {
+    const stat = await fsp.stat(abs);
+    return { mtime: stat.mtimeMs, ctime: stat.birthtimeMs || stat.ctimeMs };
+  } catch {
+    return { mtime: 0, ctime: 0 };
+  }
+}
+
 async function buildTree(absDir, relDir = '', depth = 0) {
   const entries = await fsp.readdir(absDir, { withFileTypes: true });
   const nodes = [];
   for (const entry of entries) {
     if (entry.name.startsWith('.') || IGNORED.has(entry.name)) continue;
     const childRel = relDir ? `${relDir}/${entry.name}` : entry.name;
+    const childAbs = path.join(absDir, entry.name);
     if (entry.isDirectory()) {
       if (isNoteName(entry.name)) {
+        // «Updated» de una nota: lo último entre la carpeta y su index.md
+        // (el contenido); las notas no exponen hijos en el árbol.
+        const times = await statTimes(childAbs);
+        const indexTimes = await statTimes(path.join(childAbs, 'index.md'));
         nodes.push({
           name: `${entry.name.slice(0, -3)}.md`,
           path: `${childRel}/index.md`,
           dir: childRel,
           type: 'note',
-          ext: 'md'
+          ext: 'md',
+          mtime: Math.max(times.mtime, indexTimes.mtime),
+          ctime: times.ctime || indexTimes.ctime
         });
         continue;
       }
-      const childAbs = path.join(absDir, entry.name);
       const children = depth >= MAX_DEPTH ? [] : await buildTree(childAbs, childRel, depth + 1);
+      const times = await statTimes(childAbs);
+      // El mtime de una carpeta «sube»: cuenta el último cambio dentro de ella.
+      for (const child of children) {
+        if (child.mtime > times.mtime) times.mtime = child.mtime;
+      }
       nodes.push({
         name: entry.name,
         path: childRel,
         type: 'folder',
-        children
+        children,
+        mtime: times.mtime,
+        ctime: times.ctime
       });
     } else if (entry.isFile()) {
+      const times = await statTimes(childAbs);
       nodes.push({
         name: entry.name,
         path: childRel,
         type: 'file',
-        ext: path.extname(entry.name).replace(/^\./, '').toLowerCase()
+        ext: path.extname(entry.name).replace(/^\./, '').toLowerCase(),
+        mtime: times.mtime,
+        ctime: times.ctime
       });
     }
   }

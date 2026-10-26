@@ -462,7 +462,7 @@
           {tree && tree.length === 0 ? 'No notes yet.' : 'Select a note in the sidebar.'}
         </p>
         <button class="primary-btn" onclick={requestNewNote}>
-          <Icon name="note" size={15} />
+          <Icon name="plus" size={15} />
           New note
         </button>
       </div>
