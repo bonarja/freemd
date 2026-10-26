@@ -30,6 +30,7 @@ Markdown notes editor: Node/Express CLI (`bin/freemd.js`, intended use `npx free
 - Svelte 5 **runes** (`$state`, `$derived`, `$props`, `$bindable`, `$effect`) — no Svelte 4 `export let` or stores.
 - `src/lib/markdown.js` resolves relative image srcs against the note dir (`env.base`) into `/media/...` URLs; the resources panel inserts URL-encoded filenames (`mi%20foto.png`).
 - App theme is One Dark (CSS variables in `src/app.css`); exports are deliberately light-themed (atom-one-light palette in `server/export/highlight.js`).
+- Raw editor = transparent `<textarea class="code">` layered over the highlighted `<pre class="hl-layer">` inside `.code-shell` (highlight.js markdown, registered in Editor.svelte). Their font/padding/white-space metrics must stay **identical** in `app.css` — including the mobile media query — or the text misaligns. The pre's HTML always gets a trailing `\n` (the textarea paints a phantom last line that the pre collapses), and both layers carry `scrollbar-gutter: stable` so classic scrollbars keep widths equal. Spellcheck is browser-native behind a toolbar toggle, persisted as `freemd:spellcheck:v1` (`'1'`/`'0'`, default off).
 
 ## pdfkit gotchas (`server/export/to-pdf.js`)
 

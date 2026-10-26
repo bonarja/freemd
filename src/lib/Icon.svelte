@@ -59,5 +59,9 @@
     <path d="M14 2v6h6" />
     <path d="M12 18v-6" />
     <path d="M9 15h6" />
+  {:else if name === 'spell-check'}
+    <path d="m6 16 5-11 5 11" />
+    <path d="m8 12h6" />
+    <path d="m16 20 2 2 4-4" />
   {/if}
 </svg>
