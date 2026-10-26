@@ -10,7 +10,17 @@
   let current = $state(null);
   let content = $state('');
   let saved = $state('');
-  let mode = $state('edit');
+
+  // El modo del editor se recuerda entre notas y sesiones (misma convención
+  // que la sidebar; los valores ajenos al whitelist caen en edit).
+  const savedMode = localStorage.getItem('freemd:mode:v1');
+  let mode = $state(
+    savedMode === 'split' || savedMode === 'preview' ? savedMode : 'edit'
+  );
+
+  $effect(() => {
+    localStorage.setItem('freemd:mode:v1', mode);
+  });
 
   let resources = $state([]);
   let panelOpen = $state(false);
@@ -158,7 +168,6 @@
       current = file;
       content = file.text ? file.content : '';
       saved = content;
-      mode = 'edit';
       await loadResources();
       if (isMobile) sidebarOpen = false; // seleccionar nota cierra el drawer
     } catch (error) {
