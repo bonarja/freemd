@@ -9,8 +9,30 @@
   import xmlLang from 'highlight.js/lib/languages/xml';
 
   // El grammar de markdown usa xml como sublenguaje (HTML embebido).
-  hljs.registerLanguage('markdown', markdownLang);
   hljs.registerLanguage('xml', xmlLang);
+
+  // Grammar propio sin énfasis/negrita con underscore. En hljs un `_` abre
+  // énfasis que se cierra en el siguiente `_` DEL RESTO DEL DOCUMENTO (cruza
+  // saltos de línea): un identificador como bundle_error_partial_orders se
+  // come en cursiva media tabla y descolorea lo que viene después. Con
+  // asterisco no hay ambigüedad; el preview sigue renderizando `_itálica_`.
+  function stripUnderscoreModes(mode, visited = new Set()) {
+    if (!mode || visited.has(mode)) return;
+    visited.add(mode);
+    if (Array.isArray(mode.variants)) {
+      mode.variants = mode.variants.filter((variant) => {
+        const source = `${variant.begin?.source ?? variant.begin ?? ''}${variant.end?.source ?? variant.end ?? ''}`;
+        return !source.includes('_');
+      });
+    }
+    mode.contains?.forEach((child) => stripUnderscoreModes(child, visited));
+  }
+
+  hljs.registerLanguage('markdown', (hljsInstance) => {
+    const grammar = markdownLang(hljsInstance);
+    stripUnderscoreModes(grammar);
+    return grammar;
+  });
 
   let {
     file,
