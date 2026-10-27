@@ -1,8 +1,70 @@
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import * as fontkit from 'fontkit';
 import PDFDocument from 'pdfkit';
 import { highlightSegments } from './highlight.js';
 
 // Formatos raster que pdfkit puede incrustar; el resto se exporta como marcador visible.
 const PDF_TYPES = new Set(['png', 'jpg']);
+
+// Las fuentes estándar de pdfkit (Helvetica/Courier) solo cubren Latin-1: los
+// emojis se escriben como bytes UTF-16 crudos y salen como caracteres basura.
+// Cadena de fuentes con contornos de simbolos/emoji, por prioridad: Noto Emoji
+// bundlado (todos los emojis), y despues fallbacks del sistema (flechas,
+// simbolos matematicos, etc.). La cobertura se comprueba glifo a glifo.
+const BUNDLED_SYMBOL_FONT = fileURLToPath(new URL('./fonts/NotoEmoji.ttf', import.meta.url));
+
+const SYMBOL_FONT_CANDIDATES = process.env.FREEMD_SYMBOL_FONT
+  ? [process.env.FREEMD_SYMBOL_FONT]
+  : [
+      BUNDLED_SYMBOL_FONT,
+      '/System/Library/Fonts/Apple Symbols.ttf', // macOS
+      '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',
+      'C:\\Windows\\Fonts\\seguisym.ttf', // Windows
+      'C:\\Windows\\Fonts\\arialuni.ttf',
+      '/usr/share/fonts/truetype/noto/NotoSansSymbols2-Regular.ttf', // Linux
+      '/usr/share/fonts/truetype/freefont/FreeSerif.ttf'
+    ];
+
+const SYMBOL_FONTS = [];
+for (const candidate of SYMBOL_FONT_CANDIDATES) {
+  try {
+    if (candidate && fs.existsSync(candidate)) {
+      const font = fontkit.openSync(candidate);
+      if (font) SYMBOL_FONTS.push({ path: candidate, font });
+    }
+  } catch {}
+}
+
+// Divide el texto en tramos WinAnsi (codepoints <= 0xFF, Helvetica/Courier)
+// y tramos que necesitan una fuente de la cadena. Devuelve null si todo el
+// texto se puede pintar con la fuente normal.
+function symbolSegments(text) {
+  if (!SYMBOL_FONTS.length || !/[^\u0000-\u00ff]/.test(text)) return null;
+  const segments = [];
+  let buffer = '';
+  let current = null;
+  const flush = () => {
+    if (buffer) segments.push({ text: buffer, font: current });
+    buffer = '';
+  };
+  for (const char of text) {
+    const code = char.codePointAt(0);
+    let chosen = null;
+    if (code > 0xff) {
+      // Sin cobertura en la cadena: se deja en la fuente principal (comportamiento previo).
+      const fallback = SYMBOL_FONTS.find((entry) => entry.font.hasGlyphForCodePoint(code));
+      chosen = fallback ? fallback.path : null;
+    }
+    if (chosen !== current) {
+      flush();
+      current = chosen;
+    }
+    buffer += char;
+  }
+  flush();
+  return segments.some((segment) => segment.font) ? segments : null;
+}
 
 const COLORS = {
   text: '#24292f',
@@ -155,14 +217,33 @@ class PdfRenderer {
     if (!runs.length) return;
     runs.forEach((run, index) => {
       const isLast = index === runs.length - 1;
-      // pdfkit no acepta color como opción de .text(): hay que fijar fillColor por run.
-      doc.font(run.opts.font).fontSize(run.opts.size).fillColor(run.opts.color);
-      doc.text(run.text || ' ', {
-        ...base,
-        underline: run.opts.underline,
-        link: run.opts.link,
-        continued: !isLast,
-        lineGap: 3
+      const segments = symbolSegments(run.text || ' ');
+      if (!segments) {
+        // pdfkit no acepta color como opción de .text(): hay que fijar fillColor por run.
+        doc.font(run.opts.font).fontSize(run.opts.size).fillColor(run.opts.color);
+        doc.text(run.text || ' ', {
+          ...base,
+          underline: run.opts.underline,
+          link: run.opts.link,
+          continued: !isLast,
+          lineGap: 3
+        });
+        return;
+      }
+      // Tramo a tramo: cada tramo usa la primera fuente de la cadena con el glifo.
+      segments.forEach((segment, segmentIndex) => {
+        const segmentLast = isLast && segmentIndex === segments.length - 1;
+        doc
+          .font(segment.font ?? run.opts.font)
+          .fontSize(run.opts.size)
+          .fillColor(run.opts.color);
+        doc.text(segment.text, {
+          ...base,
+          underline: run.opts.underline,
+          link: run.opts.link,
+          continued: !segmentLast,
+          lineGap: 3
+        });
       });
     });
   }
@@ -271,12 +352,13 @@ class PdfRenderer {
       doc.rect(this.margins.left - padX, y, this.width + padX * 2, lineHeight).fill(COLORS.codeBg);
       let x = this.margins.left;
       for (const seg of segs) {
-        doc
-          .font('Courier')
-          .fontSize(fontSize)
-          .fillColor(seg.color ? `#${seg.color}` : COLORS.text);
-        doc.text(seg.text, x, y + 4, { lineBreak: false });
-        x += doc.widthOfString(seg.text);
+        doc.fillColor(seg.color ? `#${seg.color}` : COLORS.text);
+        const pieces = symbolSegments(seg.text) ?? [{ text: seg.text, font: null }];
+        for (const piece of pieces) {
+          doc.font(piece.font ?? 'Courier').fontSize(fontSize);
+          doc.text(piece.text, x, y + 4, { lineBreak: false });
+          x += doc.widthOfString(piece.text);
+        }
       }
       y += lineHeight;
       chunkBottom = y;
@@ -443,17 +525,27 @@ class PdfRenderer {
     rows.forEach((row) => row.cells.forEach((cell) => (cell.resolved = resolveCellImages(cell))));
     doc.font('Helvetica-Oblique').fontSize(9);
     const placeholderHeight = doc.heightOfString('[unsupported image]', { width: cellWidth });
-    doc.font('Helvetica').fontSize(10);
-    const cellContentHeight = (cell) => {
+    // Altura del texto con la fuente mayor de las que intervienen: los tramos
+    // de emoji pueden tener metricas distintas a Helvetica.
+    const textHeight = (text, bold) => {
+      doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(10);
+      let height = doc.heightOfString(text, { width: cellWidth });
+      for (const entry of SYMBOL_FONTS) {
+        doc.font(entry.path).fontSize(10);
+        height = Math.max(height, doc.heightOfString(text, { width: cellWidth }));
+      }
+      return height;
+    };
+    const cellContentHeight = (cell, header) => {
       let height = 0;
-      if (cell.text) height += doc.heightOfString(cell.text, { width: cellWidth });
-      else if (!cell.images.length) height += doc.heightOfString(' ', { width: cellWidth });
+      if (cell.text) height += textHeight(cell.text, header);
+      else if (!cell.images.length) height += textHeight(' ', header);
       for (const img of cell.resolved) height += (img.buffer ? img.height : placeholderHeight) + 4;
       return height;
     };
     const heights = rows.map((row) => {
       const contentHeight = row.cells.length
-        ? Math.max(...row.cells.map(cellContentHeight))
+        ? Math.max(...row.cells.map((cell) => cellContentHeight(cell, row.header)))
         : 14;
       return contentHeight + pad;
     });
@@ -486,11 +578,23 @@ class PdfRenderer {
         const x = this.margins.left + cellIndex * colWidth + pad;
         let cy = y + pad / 2;
         if (cell.text || !cell.images.length) {
-          doc
-            .font(row.header ? 'Helvetica-Bold' : 'Helvetica')
-            .fontSize(10)
-            .text(cell.text || ' ', x, cy, { width: cellWidth });
-          cy += doc.heightOfString(cell.text || ' ', { width: cellWidth });
+          const drawFont = row.header ? 'Helvetica-Bold' : 'Helvetica';
+          const segments = symbolSegments(cell.text || ' ');
+          if (!segments) {
+            doc.font(drawFont).fontSize(10).fillColor(COLORS.text);
+            doc.text(cell.text || ' ', x, cy, { width: cellWidth });
+          } else {
+            segments.forEach((segment, segmentIndex) => {
+              const continued = segmentIndex < segments.length - 1;
+              doc
+                .font(segment.font ?? drawFont)
+                .fontSize(10)
+                .fillColor(COLORS.text);
+              if (segmentIndex === 0) doc.text(segment.text, x, cy, { width: cellWidth, continued });
+              else doc.text(segment.text, { width: cellWidth, continued });
+            });
+          }
+          cy += textHeight(cell.text || ' ', row.header);
         }
         for (const img of cell.resolved) {
           if (img.buffer) {

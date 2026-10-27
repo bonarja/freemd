@@ -14,6 +14,9 @@ importers:
       express:
         specifier: ^4.21.2
         version: 4.22.3
+      fontkit:
+        specifier: ^2.0.4
+        version: 2.0.4
       highlight.js:
         specifier: ^11.10.0
         version: 11.12.0
