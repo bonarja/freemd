@@ -787,20 +787,27 @@ textarea.code {
   line-height: 1.75;
   word-break: normal;
   overflow-wrap: break-word;
-  /* Reserva el mismo ancho de scrollbar en ambas capas aunque solo el
-     textarea haga scroll (evita desalineaciones con scrollbars clásicas). */
-  scrollbar-gutter: stable;
+  /* Sin scrollbar-gutter: stable. Con scrollbars clásicas el gutter solo debe
+     existir cuando la barra aparece de verdad; .hl-layer replica ese ancho vía
+     --sb-gutter (medido en Editor.svelte). Con 'stable' el textarea reserva
+     siempre y el pre (overflow: hidden) no, o al revés según el motor: las
+     líneas envuelven distinto en cada capa y el caret se desalinea. */
   z-index: 1;
 }
 
 /* Capa de highlight: métricas idénticas al textarea (fuente, padding, wrap).
-   Los colores de token vienen del tema atom-one-dark importado en markdown.js. */
+   Los colores de token vienen del tema atom-one-dark importado en markdown.js.
+   El gutter real del textarea se replica vía --sb-gutter (Editor.svelte): con
+   overflow:hidden Chrome NO reserva scrollbar-gutter, y sin él las líneas
+   envuelven ~2 caracteres más tarde que en el textarea con scrollbars
+   clásicas (clics y wraps desalineados). */
 .hl-layer {
   position: absolute;
   inset: 0;
   margin: 0;
   overflow: hidden;
   padding: 24px 32px;
+  padding-right: calc(32px + var(--sb-gutter, 0px));
   background: transparent;
   color: var(--fg);
   font-family: var(--mono);
@@ -809,7 +816,6 @@ textarea.code {
   white-space: pre-wrap;
   word-break: normal;
   overflow-wrap: break-word;
-  scrollbar-gutter: stable;
   pointer-events: none;
   user-select: none;
 }
@@ -817,6 +823,10 @@ textarea.code {
 .code-shell.half textarea.code,
 .code-shell.half .hl-layer {
   padding: 20px 24px;
+}
+
+.code-shell.half .hl-layer {
+  padding-right: calc(24px + var(--sb-gutter, 0px));
 }
 
 .preview-wrap.half {
@@ -1169,6 +1179,10 @@ textarea.code {
   .hl-layer {
     padding: 16px;
     font-size: 16px; /* evita el auto-zoom de iOS */
+  }
+
+  .hl-layer {
+    padding-right: calc(16px + var(--sb-gutter, 0px));
   }
 
   /* Sin modo Split en móvil */

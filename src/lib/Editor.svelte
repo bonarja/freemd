@@ -159,6 +159,26 @@
     previewEl.scrollTop = ratio * Math.max(0, previewEl.scrollHeight - previewEl.clientHeight);
   }
 
+  // Iguala el ancho de texto del textarea en la capa de highlight. Con
+  // scrollbars clásicas, cuando aparece la barra el textarea pierde su ancho
+  // pero el pre (overflow: hidden) no: las líneas envuelven distinto en cada
+  // capa y el caret queda desalineado respecto al texto visible. Se mide la
+  // diferencia real de clientWidth entre ambas capas (0 con scrollbars
+  // overlay) y se publica como --sb-gutter para app.css.
+  function syncGutter() {
+    if (!textareaEl || !hlEl) return;
+    const extra = Math.max(0, hlEl.clientWidth - textareaEl.clientWidth);
+    hlEl.style.setProperty('--sb-gutter', `${extra}px`);
+  }
+
+  $effect(() => {
+    if (!textareaEl || !hlEl) return;
+    syncGutter();
+    const observer = new ResizeObserver(syncGutter);
+    observer.observe(textareaEl);
+    return () => observer.disconnect();
+  });
+
   // Pega imágenes del portapapeles: las sube como recursos y las inserta.
   // Con texto en el portapapeles se deja el comportamiento por defecto.
   // El panel de recursos entra desde abajo en móvil y desde la derecha en desktop.

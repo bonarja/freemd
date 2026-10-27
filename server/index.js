@@ -404,7 +404,25 @@ export function createApp(root) {
   }));
 
   app.use('/media', express.static(root, { fallthrough: false }));
-  app.use(express.static(DIST_DIR));
+  // Assets con hash en el nombre: cacheables un año. index.html y el fallback
+  // van siempre con no-cache para que un rebuild se vea sin recuerdo del
+  // navegador (un index viejo apunta a assets borrados por el build nuevo).
+  app.use(
+    '/assets',
+    express.static(path.join(DIST_DIR, 'assets'), {
+      fallthrough: false,
+      setHeaders(res) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    })
+  );
+  app.use(
+    express.static(DIST_DIR, {
+      setHeaders(res, filePath) {
+        if (filePath.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache');
+      }
+    })
+  );
 
   app.use((req, res, next) => {
     if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
@@ -412,6 +430,7 @@ export function createApp(root) {
     if (!fs.existsSync(index)) {
       return res.status(500).send('Frontend build missing. Run: pnpm build');
     }
+    res.setHeader('Cache-Control', 'no-cache');
     res.sendFile(index);
   });
 

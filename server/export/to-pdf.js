@@ -432,12 +432,23 @@ class PdfRenderer {
     doc.moveDown(0.3);
     const startY = doc.y;
     let y = startY;
+    // Bordes verticales de un tramo continuo de tabla (entre saltos de pagina):
+    // hay que cerrarlos antes de addPage() porque el path va a la pagina actual.
+    const drawVerticals = (top, bottom) => {
+      for (let c = 0; c <= cols; c++) {
+        const x = this.margins.left + c * colWidth;
+        doc.moveTo(x, top).lineTo(x, bottom).lineWidth(0.75).strokeColor(COLORS.border).stroke();
+      }
+    };
+    let segmentTop = startY;
     rows.forEach((row, index) => {
       const rowHeight = heights[index];
       if (y + rowHeight > this.bottom) {
+        drawVerticals(segmentTop, y);
         doc.addPage();
         this.pageBreaks++;
         y = doc.y;
+        segmentTop = y;
       }
       if (row.header) {
         doc.rect(this.margins.left, y, this.width, rowHeight).fill(COLORS.codeBg);
@@ -459,10 +470,10 @@ class PdfRenderer {
         .strokeColor(COLORS.border)
         .stroke();
     });
-    for (let c = 0; c <= cols; c++) {
-      const x = this.margins.left + c * colWidth;
-      doc.moveTo(x, startY).lineTo(x, y).lineWidth(0.75).strokeColor(COLORS.border).stroke();
-    }
+    drawVerticals(segmentTop, y);
+    // pdfkit muta doc.x en cada .text(): sin este reset, todo lo que sigue a la
+    // tabla se pinta en la x de la ultima columna (mismo gotcha que renderCode).
+    doc.x = this.margins.left;
     doc.y = y + 10;
   }
 
