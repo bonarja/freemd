@@ -82,9 +82,8 @@ function paragraphOptions(state, spacing = {}) {
   return options;
 }
 
-function imageRun(loaded, alt) {
+function imageRun(loaded, alt, maxWidth = 600) {
   if (!loaded?.type || !DOCX_TYPES.has(loaded.type)) return null;
-  const maxWidth = 600;
   const maxHeight = 720;
   const scale = Math.min(maxWidth / loaded.width, maxHeight / loaded.height, 1);
   try {
@@ -248,25 +247,49 @@ function renderTable(tokens, state) {
       case 'th_open':
       case 'td_open': {
         const inline = tokens[i + 1];
-        cells.push(renderInline(inline?.children ?? [], state).runs);
+        cells.push(renderInline(inline?.children ?? [], state));
         break;
       }
       default:
         break;
     }
   }
+  const cols = Math.max(...rows.map((row) => row.cells.length));
+  // Ancho usable aproximado de una celda en A4 con margenes de 1in
+  // (~600px utiles a 96dpi); las imagenes se ajustan a su columna.
+  const cellMaxImageWidth = Math.max(60, Math.floor(580 / cols) - 16);
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: rows.map((row) =>
       new TableRow({
         tableHeader: row.header || undefined,
-        children: row.cells.map((runs) =>
-          new TableCell({
+        children: row.cells.map((result) => {
+          const children = [];
+          if (result.runs.length) {
+            children.push(new Paragraph({ children: result.runs }));
+          }
+          for (const image of result.images) {
+            const alt = image.alt || 'imagen';
+            const loaded = state.images.get(image.src);
+            const run = loaded ? imageRun(loaded, alt, cellMaxImageWidth) : null;
+            children.push(
+              run
+                ? new Paragraph({ children: [run] })
+                : new Paragraph({
+                    children: [
+                      new TextRun({ text: `[unsupported image: ${alt}]`, italics: true, color: '808080' })
+                    ]
+                  })
+            );
+          }
+          // Una celda necesita al menos un parrafo.
+          if (!children.length) children.push(new Paragraph({ children: [] }));
+          return new TableCell({
             shading: row.header ? { type: ShadingType.CLEAR, fill: 'F2F2F2' } : undefined,
             margins: { top: 60, bottom: 60, left: 110, right: 110 },
-            children: [new Paragraph({ children: runs })]
-          })
-        )
+            children
+          });
+        })
       })
     )
   });

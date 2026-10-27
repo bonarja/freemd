@@ -404,14 +404,12 @@ class PdfRenderer {
         case 'th_open':
         case 'td_open': {
           const inline = tokens[i + 1];
-          cells.push(
-            (inline?.children ?? [])
-              .map((child) =>
-                child.type === 'text' || child.type === 'code_inline' ? child.content : ''
-              )
-              .join('')
-              .trim()
-          );
+          const cell = { text: '', images: [] };
+          for (const child of inline?.children ?? []) {
+            if (child.type === 'text' || child.type === 'code_inline') cell.text += child.content;
+            else if (child.type === 'image') cell.images.push(child);
+          }
+          cells.push(cell);
           break;
         }
         default:
@@ -422,10 +420,40 @@ class PdfRenderer {
     const cols = Math.max(...rows.map((row) => row.cells.length));
     const colWidth = this.width / cols;
     const pad = 5;
+    const cellWidth = colWidth - pad * 2;
     doc.font('Helvetica').fontSize(10);
+    // Las imagenes de las celdas caben en la columna; si son gigantes se
+    // limitan a la altura util de una pagina para que la fila sea paginable.
+    const maxImgHeight = this.bottom - this.margins.top - pad * 2;
+    const resolveCellImages = (cell) =>
+      cell.images.map((token) => {
+        const alt = token.content || 'imagen';
+        const loaded = this.images.get(token.attrGet('src') ?? '');
+        if (!loaded || !PDF_TYPES.has(loaded.type)) {
+          return { alt, buffer: null, width: 0, height: 0 };
+        }
+        const scale = Math.min(cellWidth / loaded.width, maxImgHeight / loaded.height, 1);
+        return {
+          alt,
+          buffer: loaded.buffer,
+          width: Math.max(1, loaded.width * scale),
+          height: Math.max(1, loaded.height * scale)
+        };
+      });
+    rows.forEach((row) => row.cells.forEach((cell) => (cell.resolved = resolveCellImages(cell))));
+    doc.font('Helvetica-Oblique').fontSize(9);
+    const placeholderHeight = doc.heightOfString('[unsupported image]', { width: cellWidth });
+    doc.font('Helvetica').fontSize(10);
+    const cellContentHeight = (cell) => {
+      let height = 0;
+      if (cell.text) height += doc.heightOfString(cell.text, { width: cellWidth });
+      else if (!cell.images.length) height += doc.heightOfString(' ', { width: cellWidth });
+      for (const img of cell.resolved) height += (img.buffer ? img.height : placeholderHeight) + 4;
+      return height;
+    };
     const heights = rows.map((row) => {
       const contentHeight = row.cells.length
-        ? Math.max(...row.cells.map((cell) => doc.heightOfString(cell || ' ', { width: colWidth - pad * 2 })))
+        ? Math.max(...row.cells.map(cellContentHeight))
         : 14;
       return contentHeight + pad;
     });
@@ -455,12 +483,28 @@ class PdfRenderer {
       }
       doc.fillColor(COLORS.text);
       row.cells.forEach((cell, cellIndex) => {
-        doc
-          .font(row.header ? 'Helvetica-Bold' : 'Helvetica')
-          .fontSize(10)
-          .text(cell || ' ', this.margins.left + cellIndex * colWidth + pad, y + pad / 2, {
-            width: colWidth - pad * 2
-          });
+        const x = this.margins.left + cellIndex * colWidth + pad;
+        let cy = y + pad / 2;
+        if (cell.text || !cell.images.length) {
+          doc
+            .font(row.header ? 'Helvetica-Bold' : 'Helvetica')
+            .fontSize(10)
+            .text(cell.text || ' ', x, cy, { width: cellWidth });
+          cy += doc.heightOfString(cell.text || ' ', { width: cellWidth });
+        }
+        for (const img of cell.resolved) {
+          if (img.buffer) {
+            doc.image(img.buffer, x, cy, { width: img.width, height: img.height });
+            cy += img.height + 4;
+          } else {
+            doc
+              .font('Helvetica-Oblique')
+              .fontSize(9)
+              .fillColor(COLORS.muted)
+              .text(`[unsupported image: ${img.alt}]`, x, cy, { width: cellWidth });
+            cy += placeholderHeight + 4;
+          }
+        }
       });
       y += rowHeight;
       doc
