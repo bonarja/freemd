@@ -1,5 +1,9 @@
 # freemd
 
+[![npm version](https://img.shields.io/npm/v/freemd.svg)](https://www.npmjs.com/package/freemd)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![GitHub repo](https://img.shields.io/badge/github-bonarja/freemd-gray?logo=github)](https://github.com/bonarja/freemd)
+
 **English** · [Español](./README.es.md)
 
 A *local* Markdown notes app that lives on your machine. One command and you're editing notes in your browser — a clean dark interface, live preview, per-note images you can paste directly from your clipboard, and one-click export to PDF or Word.

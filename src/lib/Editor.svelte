@@ -1,6 +1,7 @@
 <script>
   import { tick } from 'svelte';
   import { fly, slide } from 'svelte/transition';
+  import morphdom from 'morphdom';
   import Icon from './Icon.svelte';
   import ActionSheet from './ActionSheet.svelte';
   import { render } from './markdown.js';
@@ -56,6 +57,9 @@
   let textareaEl = $state(null);
   let hlEl = $state(null);
   let previewEl = $state(null);
+  let previewArticleEl = $state(null);
+  // Qué nota está pintada en el preview (evita morphing entre notas distintas).
+  let renderedFor = '';
   let exportOpen = $state(false);
   let resourceSheet = $state(null);
 
@@ -74,6 +78,25 @@
 
   // Notas enormes: se muestran sin color antes que congelar la edición.
   const HIGHLIGHT_LIMIT = 120_000;
+
+  // El preview NO se re-inyecta con {@html} en cada pulsación: eso recreaba
+  // todos los nodos y cada <img> «parpadeaba» (nueva carga + colapso de
+  // altura, que movía el contenido posterior). Con morphdom se parcha el
+  // DOM existente: las imágenes vivas (mismo src) no se recargan.
+  $effect(() => {
+    const path = file?.path ?? '';
+    const next = html;
+    const root = previewArticleEl;
+    if (!root) return;
+    if (renderedFor !== path) {
+      root.innerHTML = next;
+      renderedFor = path;
+      return;
+    }
+    const fresh = document.createElement('div');
+    fresh.innerHTML = next;
+    morphdom(root, fresh, { childrenOnly: true });
+  });
 
   function escapeHtml(text) {
     return text.replace(
@@ -339,9 +362,7 @@
     {/if}
     {#if mode !== 'edit'}
       <div class="preview-wrap" class:half={mode === 'split'} bind:this={previewEl}>
-        <article class="preview">
-          {@html html}
-        </article>
+        <article class="preview" bind:this={previewArticleEl}></article>
       </div>
     {/if}
     {#if panelOpen && isMobile}
