@@ -4,6 +4,8 @@
   import Icon from './lib/Icon.svelte';
   import ActionSheet from './lib/ActionSheet.svelte';
   import * as api from './lib/api.js';
+  import { untrack } from 'svelte';
+  import { router, navigate, pathToUrl, urlToCandidates } from './lib/router.svelte.js';
 
   let tree = $state(null);
   let root = $state('~/freemd');
@@ -152,6 +154,17 @@
     }
   }
 
+  // Carga en el editor un path del API. Con fromUrl=true (carga directa,
+  // atrás/adelante) NO se toca el historial: la URL ya está donde toca.
+  async function loadFromPath(path, options = {}) {
+    const file = await api.readFile(path);
+    current = file;
+    content = file.text ? file.content : '';
+    saved = content;
+    await loadResources();
+    if (!options.fromUrl) navigate(pathToUrl(file.path));
+  }
+
   async function openNode(node, options = {}) {
     const target = node.path;
     if (
@@ -161,17 +174,68 @@
       dirty &&
       !confirm('There are unsaved changes. Continue without saving?')
     ) {
-      return;
+      return false;
     }
     try {
-      const file = await api.readFile(target);
-      current = file;
-      content = file.text ? file.content : '';
-      saved = content;
-      await loadResources();
+      await loadFromPath(target);
       if (isMobile) sidebarOpen = false; // seleccionar nota cierra el drawer
+      return true;
     } catch (error) {
       notify(error.message, 'error');
+      return false;
+    }
+  }
+
+  // --- URL ↔ nota (rutas /note/...) ---------------------------------------
+  const urlRoute = $derived(router.route);
+
+  // Efecto de navegación: SOLO reacciona a cambios de ruta (push/replace
+  // propios y popstate); `current`/`dirty` se leen con untrack porque son
+  // estado interno, no dependencias (si no, re-arraancaría al escribir).
+  $effect(() => {
+    const route = urlRoute;
+    untrack(() => {
+      void syncRoute(route);
+    });
+  });
+
+  async function syncRoute(route) {
+    const url = `/note/${route.segments.map(encodeURIComponent).join('/')}`;
+    if (route.name === 'note') {
+      // La URL ya coincide con la nota abierta (push/replace propios).
+      if (current && pathToUrl(current.path) === url) return;
+      // Cancelación por cambios sin guardar: restauramos la URL anterior.
+      if (dirty && !confirm('There are unsaved changes. Continue without saving?')) {
+        navigate(current ? pathToUrl(current.path) : '/', { replace: true });
+        return;
+      }
+      // Probamos candidatos en orden: nota primero (x-md/index.md), luego el
+      // archivo suelto x.md si existe en la misma carpeta.
+      for (const candidate of urlToCandidates(route.segments.join('/'))) {
+        try {
+          await loadFromPath(candidate, { fromUrl: true });
+          return;
+        } catch {}
+      }
+      notify('Note not found', 'error');
+      navigate('/', { replace: true });
+      return;
+    }
+    // Ruta reservada aún sin página (/settings…): tratamos como inicio.
+    if (route.name === 'unknown' || route.name === 'notfound') {
+      navigate('/', { replace: true });
+      return;
+    }
+    // Volver (atrás) al inicio: vaciamos el editor (con confirm si hay cambios).
+    if (current) {
+      if (dirty && !confirm('There are unsaved changes. Continue without saving?')) {
+        navigate(pathToUrl(current.path), { replace: true });
+        return;
+      }
+      current = null;
+      content = '';
+      saved = '';
+      resources = [];
     }
   }
 
@@ -198,6 +262,11 @@
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => save(true), 1200);
     return () => clearTimeout(autosaveTimer);
+  });
+
+  // El título de la pestaña sigue a la nota abierta (mejor con varias pestañas).
+  $effect(() => {
+    document.title = current ? `${current.name} · freemd` : 'freemd';
   });
 
   async function handleCreate(kind, name) {
@@ -290,6 +359,8 @@
         content = '';
         saved = '';
         resources = [];
+        // La nota abierta ya no existe: volvemos al inicio sin ensuciar historial.
+        navigate('/', { replace: true });
       }
       await refresh();
       notify('Deleted');
@@ -340,6 +411,8 @@
       const result = await api.moveEntry(from, to);
       if (current && (current.path === from || current.path.startsWith(`${from}/`))) {
         current = relabel(`${result.path}${current.path.slice(from.length)}`);
+        // La URL de la nota cambia con el move (reemplazo, no push).
+        navigate(pathToUrl(current.path), { replace: true });
       }
       await refresh();
       notify('Moved');
@@ -359,6 +432,8 @@
         (current.path === target || current.path.startsWith(`${target}/`))
       ) {
         current = relabel(`${result.path}${current.path.slice(target.length)}`);
+        // La URL de la nota cambia con el rename (reemplazo, no push).
+        navigate(pathToUrl(current.path), { replace: true });
       }
       await refresh();
       notify('Renamed');
